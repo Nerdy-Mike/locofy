@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  # FastAPI Backend
+  ui-labeling-api:
+    build:
+      context: .
+      dockerfile: docker/app.Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      ENVIRONMENT: development
+      UPLOAD_DIR: /app/data/uploads
+      ANNOTATIONS_DIR: /app/data/annotations
+    volumes:
+      - ./adapters:/app/adapters
+      - ./services:/app/services
+      - ./utils:/app/utils
+      - ./models:/app/models
+      - ./src:/app/src
+      - ./data:/app/data
+      - ./.env:/app/.env
+    command: uvicorn adapters.fastapi_adapter:app --host 0.0.0.0 --port 8000 --reload
+
+  # Streamlit Frontend
+  ui-labeling-frontend:
+    build:
+      context: .
+      dockerfile: docker/frontend.Dockerfile
+    ports:
+      - "8501:8501"
+    environment:
+      API_BASE_URL: http://ui-labeling-api:8000
+      ENVIRONMENT: development
+    volumes:
+      - ./frontend:/app/frontend
+      - ./data:/app/data
+      - ./.env:/app/.env
+    depends_on:
+      - ui-labeling-api
+    command: streamlit run frontend/streamlit_app.py --server.address=0.0.0.0 --server.port=8501
