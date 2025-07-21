@@ -17,6 +17,14 @@
 13. [Development & Deployment](#development--deployment)
 14. [Future Considerations](#future-considerations)
 
+## Related Documents
+
+**Specialized Architecture Documents:**
+- **[MCP_ARCHITECTURE.md](./MCP_ARCHITECTURE.md)** - Model Context Protocol integration strategy and implementation
+- **[IMPLEMENTATION_PLAN.md](./IMPLEMENTATION_PLAN.md)** - Development roadmap and phases
+- **[DATAFLOW.md](./DATAFLOW.md)** - System data flows and processing
+- **[DATA_TYPES.md](./DATA_TYPES.md)** - Comprehensive data model specifications
+
 ## System Overview
 
 ### High-Level Architecture
@@ -73,14 +81,14 @@
 
 ### Component Responsibilities
 
-| Component                     | Primary Responsibilities                              | Secondary Responsibilities                  |
-| ----------------------------- | ----------------------------------------------------- | ------------------------------------------- |
-| **Streamlit Frontend**        | User interface, image display, annotation tools       | Real-time feedback, batch monitoring, quality dashboard        |
-| **FastAPI Backend**           | API orchestration, file management, validation        | Background processing, WebSocket management |
-| **Ground Truth Quality Checker** | Conflict detection, agreement calculation, status management | Quality metrics, validation |
-| **Review Workflow Manager**   | Conflict resolution, approval workflows              | Consensus building, status updates |
-| **MCP Client**                | LLM communication, context management, tool execution | Response parsing, error handling            |
-| **Enhanced Storage**          | File persistence, data consistency, organized structure | Backup, recovery, quality tracking                            |
+| Component                        | Primary Responsibilities                                     | Secondary Responsibilities                              |
+| -------------------------------- | ------------------------------------------------------------ | ------------------------------------------------------- |
+| **Streamlit Frontend**           | User interface, image display, annotation tools              | Real-time feedback, batch monitoring, quality dashboard |
+| **FastAPI Backend**              | API orchestration, file management, validation               | Background processing, WebSocket management             |
+| **Ground Truth Quality Checker** | Conflict detection, agreement calculation, status management | Quality metrics, validation                             |
+| **Review Workflow Manager**      | Conflict resolution, approval workflows                      | Consensus building, status updates                      |
+| **MCP Client**                   | LLM communication, context management, tool execution        | Response parsing, error handling                        |
+| **Enhanced Storage**             | File persistence, data consistency, organized structure      | Backup, recovery, quality tracking                      |
 
 ## Technology Stack Decisions
 
@@ -401,105 +409,79 @@ class GroundTruthConfig:
 
 ## MCP Integration Architecture
 
-### MCP Client Design
+### MCP Integration Strategy
+
+**📖 Detailed MCP Architecture:** See [MCP_ARCHITECTURE.md](./MCP_ARCHITECTURE.md) for complete MCP integration specifications.
+
+**MVP Decision:** Simplified MCP integration with basic context awareness to balance immediate value with development complexity.
+
+### MCP Component Overview
 
 ```python
-class MCPClient:
-    """Model Context Protocol client for UI detection"""
-    
-    def __init__(self, config: MCPConfig):
-        self.config = config
-        self.session_manager = MCPSessionManager()
-        self.tool_registry = UIDetectionToolRegistry()
-        self.response_parser = StructuredResponseParser()
-    
-    async def detect_ui_elements(self, 
-                               image_data: bytes, 
-                               context: DetectionContext) -> DetectionResult:
-        """Main entry point for UI element detection"""
-        
-        # 1. Prepare MCP session
-        session = await self.session_manager.create_session(
-            session_id=context.session_id,
-            task_type="ui_detection"
-        )
-        
-        # 2. Build structured context
-        mcp_context = self._build_mcp_context(image_data, context)
-        
-        # 3. Execute detection with tools
-        raw_response = await self._execute_detection(session, mcp_context)
-        
-        # 4. Parse and validate response
-        parsed_result = await self.response_parser.parse(raw_response)
-        
-        # 5. Update session history
-        await session.add_interaction(mcp_context, parsed_result)
-        
-        return parsed_result
-```
-
-### Tool Registry for UI Detection
-
-```python
-class UIDetectionToolRegistry:
-    """Registry of MCP tools for UI element detection"""
-    
-    def get_tools(self) -> List[MCPTool]:
-        return [
-            MCPTool(
-                name="detect_ui_elements",
-                description="Analyze image and detect UI components",
-                parameters=UIDetectionParameters,
-                handler=self._handle_ui_detection
-            ),
-            MCPTool(
-                name="validate_bounding_box",
-                description="Validate bounding box coordinates",
-                parameters=BoundingBoxParameters,
-                handler=self._handle_bbox_validation
-            ),
-            MCPTool(
-                name="refine_detection",
-                description="Refine detection based on feedback",
-                parameters=RefinementParameters,
-                handler=self._handle_detection_refinement
-            )
-        ]
-```
-
-### Context Management Strategy
-
-**Session Persistence:**
-```python
-class MCPSessionManager:
-    """Manages MCP session state and context"""
+# MVP MCP Integration - Simplified Architecture
+class SimpleMCPClient:
+    """Lightweight MCP client for MVP implementation"""
     
     def __init__(self):
-        self.active_sessions = {}
-        self.session_history = {}
+        self.server_connection = MCPServerConnection()
+        self.context_builder = BasicContextBuilder()
+        self.ui_detection_tool = UIDetectionTool()
     
-    async def create_session(self, session_id: str, task_type: str) -> MCPSession:
-        """Create new MCP session with context"""
-        session = MCPSession(
-            id=session_id,
-            task_type=task_type,
-            created_at=datetime.now(),
-            context_history=[],
-            accumulated_knowledge={}
+    async def detect_ui_elements_with_context(self, 
+                                            image_data: bytes, 
+                                            image_id: str) -> PredictionResponse:
+        """Main entry point for context-aware UI detection"""
+        
+        # 1. Build basic context from existing annotations
+        context = await self.context_builder.build_context(image_id)
+        
+        # 2. Execute structured UI detection
+        raw_response = await self.server_connection.execute_tool(
+            tool="detect_ui_elements",
+            image=image_data,
+            context=context
         )
         
-        self.active_sessions[session_id] = session
-        return session
-    
-    async def add_user_feedback(self, session_id: str, feedback: UserFeedback):
-        """Incorporate user feedback into session context"""
-        session = self.active_sessions[session_id]
-        session.accumulated_knowledge["user_corrections"] = feedback
-        
-        # Update future prompts based on feedback
-        await self._update_prompt_templates(session, feedback)
+        # 3. Parse structured response
+        return self._parse_response(raw_response)
 ```
+
+### MVP MCP Benefits vs. Direct API
+
+| Aspect                  | Direct OpenAI API    | MVP MCP                        | Future Advanced MCP            |
+| ----------------------- | -------------------- | ------------------------------ | ------------------------------ |
+| **Context Awareness**   | ❌ None               | ✅ Basic (existing annotations) | ✅ Advanced (learning patterns) |
+| **Structured Output**   | ⚠️ Prompt engineering | ✅ Tool-based validation        | ✅ Multi-tool orchestration     |
+| **Development Time**    | ✅ 0 hours            | ⚠️ 3-4 hours                    | ❌ 20-30 hours                  |
+| **Learning Capability** | ❌ Stateless          | ❌ Deferred to Phase 2          | ✅ Session-based learning       |
+| **Quality Integration** | ⚠️ Post-processing    | ✅ Enhanced metadata            | ✅ Predictive quality           |
+
+### Integration with Existing Systems
+
+**Enhanced LLM Prediction Flow:**
+```mermaid
+graph TD
+    A[Existing Prediction Endpoint] --> B{MCP Enabled?}
+    B -->|Yes| C[SimpleMCPClient]
+    B -->|No| D[Direct OpenAI API]
+    
+    C --> E[Load Existing Annotations]
+    E --> F[Build Basic Context]
+    F --> G[MCP UI Detection Tool]
+    G --> H[Enhanced Predictions]
+    
+    D --> I[Standard Predictions]
+    
+    H --> J[Existing Quality System]
+    I --> J
+    J --> K[Save to data/predictions/]
+```
+
+**Key Integration Points:**
+- **Prediction Service**: Enhanced with MCP client while maintaining fallback
+- **Context Building**: Leverages existing annotation and metadata storage
+- **Quality Management**: Enhanced with MCP metadata but uses existing conflict detection
+- **Data Storage**: Compatible with existing file structure
 
 ## API Design Principles
 

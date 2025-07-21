@@ -23,6 +23,17 @@ This document serves as the single source of truth for all data types used throu
 
 This simplification aligns with business requirements to focus on essential UI element classification without complex manual naming workflows.
 
+### MCP Integration (MVP Approach)
+**Decision**: Simplified MCP integration for MVP to balance immediate value with low complexity.
+
+**MCP Data Types Added:**
+- ✅ **SimpleMCPContext** - Basic context awareness using existing annotations
+- ✅ **MCPResult** - Enhanced prediction results with MCP metadata
+- ✅ **MCPMetadata** - Simple metadata tracking for MCP predictions
+- ⏭️ **AdvancedMCPContext** - Deferred to Phase 2 (session learning, user patterns)
+
+**📖 Complete MCP Architecture:** See [MCP_ARCHITECTURE.md](./MCP_ARCHITECTURE.md) for detailed specifications and implementation strategy.
+
 ---
 
 ## Core Enums
@@ -346,19 +357,47 @@ class PredictionResponse(BaseModel):
     status: ProcessingStatus
 ```
 
-### MCPContext
-```python
-# Forward reference for UserFeedback
-from typing import TYPE_CHECKING
-if TYPE_CHECKING:
-    from .user_types import UserFeedback
+### MCPContext (MVP - Simplified)
 
-class MCPContext(BaseModel):
+**📖 Complete MCP Data Models:** See [MCP_ARCHITECTURE.md](./MCP_ARCHITECTURE.md) for full MCP specifications.
+
+```python
+# MVP MCP Context - Basic context awareness only
+class SimpleMCPContext(BaseModel):
+    image_id: str
+    task: str = "ui_element_detection"
+    image_metadata: Dict[str, Any]
+    existing_annotations: List[Dict[str, Any]] = []
+    detection_instructions: str
+
+class MCPResult(BaseModel):
+    prediction_id: str
+    image_id: str
+    model_version: str
+    processing_time: float
+    total_elements: int
+    status: str
+    mcp_enabled: bool = True
+    context_used: bool = True
+    elements: List[DetectedElement]
+    mcp_metadata: 'MCPMetadata'
+
+class MCPMetadata(BaseModel):
+    context_sources: List[str] = []
+    conflict_avoided: bool = False
+    fallback_used: bool = False
+    server_response_time: Optional[float] = None
+
+# Advanced MCP Context (Phase 2 - Deferred)
+class AdvancedMCPContext(BaseModel):
+    """Advanced context with session learning - Phase 2"""
     session_id: str
     image_id: str
     task_type: str
     user_feedback: Optional['UserFeedback'] = None
     previous_predictions: Optional[List[DetectedElement]] = None
+    learning_patterns: Optional[Dict[str, Any]] = None
+    quality_context: Optional[Dict[str, Any]] = None
 ```
 
 ---

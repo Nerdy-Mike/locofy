@@ -851,8 +851,216 @@ def detect_conflicts_optimized(new_annotations: List[Annotation],
 
 ---
 
-### 3. LLM Prediction Data Flow  
-*To be documented when implementing prediction features*
+### 3. LLM Prediction Data Flow
+
+#### 3.1 MVP MCP-Enhanced Prediction Flow
+
+**📖 Complete MCP Architecture:** See [MCP_ARCHITECTURE.md](./MCP_ARCHITECTURE.md) for detailed MCP specifications.
+
+**Overview**: Enhanced prediction flow using simplified MCP integration with basic context awareness.
+
+#### High-Level MCP Flow
+```mermaid
+graph TD
+    A[User Requests Prediction] --> B[Load Image + Context]
+    B --> C[SimpleMCPClient]
+    C --> D[BasicContextBuilder]
+    D --> E[MCP Server Connection]
+    E --> F[OpenAI MCP Server]
+    F --> G[GPT-4V with UI Detection Tool]
+    G --> H[Structured Results]
+    H --> I[Parse & Enhance]
+    I --> J[Quality Integration]
+    J --> K[Save Enhanced Predictions]
+```
+
+#### Detailed MCP Sequence Diagram
+```mermaid
+sequenceDiagram
+    participant User as 👤 User
+    participant SF as 🎨 Streamlit Frontend
+    participant API as 🔧 FastAPI Backend
+    participant MCP as 🤖 SimpleMCPClient
+    participant CTX as 📋 BasicContextBuilder
+    participant Server as 📡 MCP Server
+    participant GPT as 🧠 GPT-4V
+    participant QC as 🔍 Quality Checker
+    participant FS as 💾 File Storage
+    
+    User->>SF: Click "Predict with MCP"
+    SF->>API: POST /api/predict-mcp/{image_id}
+    
+    API->>FS: Load image data
+    API->>FS: Load existing annotations
+    API->>FS: Load image metadata
+    FS-->>API: Image + annotation context
+    
+    API->>MCP: detect_ui_elements_with_context(image_id)
+    MCP->>CTX: build_context(image_id)
+    CTX->>FS: Load existing annotations
+    CTX->>FS: Load quality metrics
+    CTX-->>MCP: Basic context object
+    
+    MCP->>Server: Execute UI detection tool
+    Note over MCP,Server: JSON-RPC over stdio
+    
+    Server->>GPT: Analyze image with context
+    Note over Server,GPT: Tool: detect_ui_elements<br/>Context: existing annotations<br/>Instructions: avoid overlaps
+    
+    GPT-->>Server: Structured UI element predictions
+    Server-->>MCP: Tool execution results
+    MCP->>MCP: Parse structured response
+    MCP-->>API: PredictionResponse with MCP metadata
+    
+    API->>QC: Enhance with quality checks
+    QC->>QC: Check conflicts with existing annotations
+    QC->>QC: Calculate confidence adjustments
+    QC-->>API: Enhanced predictions
+    
+    API->>FS: Save MCP predictions
+    API->>FS: Update image metadata
+    API-->>SF: Enhanced prediction response
+    
+    SF->>SF: Display predictions with MCP indicators
+    SF->>User: Show enhanced results
+```
+
+#### MCP Context Building Process
+
+```mermaid
+flowchart TD
+    A[Image ID] --> B[BasicContextBuilder]
+    B --> C[Load Image Metadata]
+    B --> D[Load Existing Annotations]
+    B --> E[Load Quality Metrics]
+    
+    C --> F[Image Dimensions]
+    C --> G[Format Information]
+    
+    D --> H[Manual Annotations]
+    D --> I[Previous Predictions]
+    
+    E --> J[Quality Scores]
+    E --> K[Conflict History]
+    
+    F --> L[MCP Context Object]
+    G --> L
+    H --> L
+    I --> L
+    J --> L
+    K --> L
+    
+    L --> M[Enhanced Prompt Context]
+    M --> N[UI Detection Tool]
+```
+
+#### MVP MCP Data Structures
+
+**Context Input:**
+```json
+{
+  "image_id": "15d02cb6-8498-4ad3-8169-058496bfab22",
+  "task": "ui_element_detection",
+  "image_metadata": {
+    "dimensions": {"width": 1920, "height": 1080},
+    "format": "PNG"
+  },
+  "existing_annotations": [
+    {
+      "tag": "button",
+      "bounding_box": {"x": 50, "y": 50, "width": 100, "height": 30},
+      "created_by": "manual",
+      "confidence": null
+    }
+  ],
+  "detection_instructions": "Detect UI elements while avoiding overlap with existing annotations"
+}
+```
+
+**Enhanced Prediction Output:**
+```json
+{
+  "prediction_id": "pred_15d02cb6_mcp_1704102000",
+  "image_id": "15d02cb6-8498-4ad3-8169-058496bfab22",
+  "model_version": "gpt-4-vision-mcp-mvp",
+  "processing_time": 2.8,
+  "total_elements": 3,
+  "status": "completed",
+  "mcp_enabled": true,
+  "context_used": true,
+  "elements": [
+    {
+      "id": "elem_0_mcp",
+      "tag": "input",
+      "bounding_box": {"x": 100, "y": 80, "width": 200, "height": 25},
+      "confidence": 0.87,
+      "reasoning": "Text input field with visible border, positioned to avoid existing button annotation"
+    }
+  ],
+  "mcp_metadata": {
+    "context_sources": ["existing_annotations", "image_metadata"],
+    "conflict_avoided": true,
+    "fallback_used": false
+  }
+}
+```
+
+#### Error Handling & Fallback Flow
+
+```mermaid
+graph TD
+    A[MCP Prediction Request] --> B{MCP Server Available?}
+    B -->|No| C[Log MCP Unavailable]
+    B -->|Yes| D[Execute MCP Tool]
+    
+    C --> E[Fallback to Direct API]
+    
+    D --> F{Tool Execution Success?}
+    F -->|No| G[Log MCP Error]
+    F -->|Yes| H[Parse MCP Response]
+    
+    G --> E
+    
+    H --> I{Valid Response?}
+    I -->|No| J[Log Parse Error]
+    I -->|Yes| K[Return MCP Results]
+    
+    J --> E
+    E --> L[Direct OpenAI API Call]
+    L --> M[Standard Prediction Flow]
+    M --> N[Return Standard Results]
+    
+    K --> O[Enhanced Results with MCP Metadata]
+```
+
+#### Performance Considerations
+
+| Aspect                 | MVP MCP                            | Target              | Mitigation             |
+| ---------------------- | ---------------------------------- | ------------------- | ---------------------- |
+| **Response Time**      | 2-4 seconds longer than direct API | < 10 seconds total  | Timeout and fallback   |
+| **Context Building**   | 0.2-0.5 seconds                    | < 1 second          | Cache annotations      |
+| **MCP Server Startup** | 1-2 seconds first call             | Acceptable          | Keep server warm       |
+| **Fallback Rate**      | Target < 10%                       | Monitor reliability | Improve error handling |
+
+#### Integration Points
+
+| System Component    | MCP Integration                            | Changes Required                |
+| ------------------- | ------------------------------------------ | ------------------------------- |
+| **FastAPI Backend** | Add `/api/predict-mcp/{image_id}` endpoint | New endpoint alongside existing |
+| **File Storage**    | Enhanced prediction metadata               | Backward compatible format      |
+| **Quality System**  | MCP metadata integration                   | Enhanced conflict detection     |
+| **Frontend**        | MCP prediction display                     | Enhanced UI indicators          |
+
+#### Future Enhancement Path
+
+**Phase 2 Advanced MCP Features** (Deferred from MVP):
+- Session-based learning across predictions
+- Advanced multi-tool orchestration
+- Real-time user feedback integration
+- Cross-image pattern recognition
+- Predictive quality assessment
+
+This MVP MCP flow provides immediate improvements in prediction quality through context awareness while maintaining system stability and providing a foundation for future advanced features.
 
 ### 4. Quality Management Data Flow
 *To be documented when implementing quality management*

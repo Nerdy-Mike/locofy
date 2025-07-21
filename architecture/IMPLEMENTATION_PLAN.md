@@ -147,30 +147,38 @@ Create a tool that helps users label UI components on design screenshots and eva
 - **Workaround**: Test buttons and manual coordinate entry for development
 - **Solution**: Custom Streamlit component or alternative interaction model needed
 
-### 1.5 LLM Integration (Simple)
+### 1.5 LLM Integration (MVP MCP)
 
-#### Direct API Integration
-- **OpenAI API Client**: Direct ChatGPT-4V API communication without protocol complexity
-- **Image Preprocessing**: Format conversion and optimization for API consumption
-- **Prompt Engineering**: Effective prompts for UI element detection
-- **Response Parsing**: Convert LLM responses to structured annotation format
+#### MVP MCP Integration Strategy
 
-#### Prediction Pipeline
-- **Single Image Processing**: Process individual images through LLM pipeline
-- **Result Formatting**: Convert predictions to standard annotation format
-- **Confidence Scoring**: Handle and display prediction confidence levels
-- **Error Handling**: Graceful failure management for API issues
+**📖 Complete MCP Specifications:** See [MCP_ARCHITECTURE.md](./MCP_ARCHITECTURE.md) for detailed architecture.
 
-#### Integration with Annotation System
-- **Prediction Display**: Show LLM results alongside manual annotations
-- **Result Comparison**: Visual comparison between predictions and ground truth
-- **Prediction Export**: Include predictions in standard export format
+**Decision:** Simplified MCP integration that provides immediate improvements over direct API while maintaining low complexity.
+
+#### MCP Enhancement Benefits
+- **Context Awareness**: Include existing annotations in predictions to avoid conflicts
+- **Structured Output**: Tool-based detection more reliable than prompt engineering
+- **Future Foundation**: Easy upgrade path to advanced MCP features
+- **Fallback Safety**: Automatic fallback to direct API if MCP fails
+
+#### MVP Implementation Components
+- **SimpleMCPClient**: Lightweight MCP client with basic context building
+- **BasicContextBuilder**: Include existing annotations and image metadata
+- **UIDetectionTool**: Single structured tool for UI element detection
+- **MCPServerConnection**: Simple stdio communication with OpenAI MCP server
+
+#### Integration Points
+- **Enhanced Prediction Endpoint**: `/api/predict-mcp/{image_id}` alongside existing endpoint
+- **Context Building**: Load existing annotations to inform new predictions
+- **Quality Integration**: Enhanced prediction metadata for existing quality system
+- **Fallback Strategy**: Automatic fallback to direct API on MCP failure
 
 #### Success Criteria
-- LLM generates predictions for uploaded images
-- Results are displayed in consistent format with manual annotations
-- Prediction confidence scores are meaningful and displayed
-- Integration with existing annotation workflow is seamless
+- MCP integration completed in < 4 hours development time
+- Prediction quality improves > 10% vs direct API baseline
+- Context awareness: > 80% of predictions consider existing annotations
+- System stability: < 5% error rate
+- Fallback reliability: Direct API backup always available
 
 ### 1.6 Export & Basic Evaluation
 
@@ -295,30 +303,43 @@ Create a tool that helps users label UI components on design screenshots and eva
 - Consensus building produces high-quality ground truth
 - Process scales with team size and annotation volume
 
-### 2.5 Advanced LLM Integration (MCP)
+### 2.5 Advanced MCP Integration (Enhanced)
 
-#### Model Context Protocol Implementation
-- **Session Management**: Persistent context across multiple interactions
-- **Tool Integration**: Custom tools for UI detection and validation
-- **Context Building**: Structured context management for better predictions
-- **Multi-Model Support**: Framework for integrating multiple LLM providers
+#### Advanced MCP Features (Phase 2)
 
-#### Enhanced Prediction Pipeline
-- **Batch Processing**: Efficient processing of multiple images
-- **Context-Aware Predictions**: Use previous annotations to improve accuracy
-- **Feedback Integration**: Incorporate user corrections into future predictions
-- **Model Performance Tracking**: Monitor and compare different model versions
+**📖 Complete Advanced Architecture:** See [MCP_ARCHITECTURE.md](./MCP_ARCHITECTURE.md) for full specifications.
 
-#### Advanced Integration Features
-- **Real-Time Prediction Updates**: Live predictions as users annotate
-- **Prediction Confidence Analysis**: Detailed confidence scoring and explanation
-- **Active Learning Integration**: Identify images that would most benefit from annotation
+**Building on MVP:** Enhance the Phase 1 SimpleMCPClient with advanced capabilities deferred from MVP.
+
+#### Session Management & Learning
+- **Persistent Sessions**: Context storage across multiple interactions
+- **User Pattern Recognition**: Learn from user corrections and preferences
+- **Learning Engine**: Adapt predictions based on historical feedback
+- **Session Context Storage**: Persistent storage of learning patterns
+
+#### Enhanced Tool Integration
+- **Multi-Tool Registry**: Specialized tools for detection, validation, and quality assessment
+- **Dynamic Tool Selection**: Context-aware tool selection based on task requirements
+- **Tool Performance Tracking**: Monitor and optimize individual tool effectiveness
+- **Custom Tool Development**: Domain-specific tools for UI detection patterns
+
+#### Advanced Context Management
+- **Multi-Source Context**: Synthesis from annotations, quality metrics, user feedback
+- **Predictive Context**: Anticipate user needs based on historical patterns
+- **Context Optimization**: Efficient context building for large annotation datasets
+- **Cross-Image Learning**: Patterns recognized across multiple images
+
+#### Quality-Integrated Predictions
+- **Predictive Quality Assessment**: Predict annotation conflicts before they occur
+- **Confidence Calibration**: Adaptive confidence based on historical accuracy
+- **Real-Time Conflict Detection**: Immediate conflict detection during prediction
+- **Quality-Aware Tool Selection**: Choose tools based on required quality levels
 
 #### Success Criteria
-- MCP integration provides more accurate and context-aware predictions
-- Batch processing handles large datasets efficiently
-- Feedback loop improves model performance over time
-- Integration supports multiple LLM providers
+- Session learning improves prediction accuracy over time
+- Advanced tools provide specialized capabilities beyond basic detection
+- Quality integration reduces manual review workload
+- System scales to handle enterprise-level annotation workflows
 
 ### 2.6 Real-Time Collaboration Features
 
