@@ -73,33 +73,38 @@ class UILabelingAPIClient:
     def get_annotations(self, image_id: str) -> List[Dict]:
         """Get all annotations for an image"""
         response = self.session.get(
-            f"{self.base_url}/images/{image_id}/annotations", timeout=10
+            f"{self.base_url}/annotations/{image_id}", timeout=10
         )
         response.raise_for_status()
         return response.json()
 
-    def create_annotation(self, image_id: str, annotation_data: Dict) -> Dict:
-        """Create a new annotation"""
+    def save_annotation_batch(self, image_id: str, created_by: str, annotations: List[Dict]) -> Dict:
+        """Save a batch of annotations for an image"""
+        batch_data = {
+            "image_id": image_id,
+            "created_by": created_by,
+            "annotations": annotations
+        }
         response = self.session.post(
-            f"{self.base_url}/images/{image_id}/annotations",
-            json=annotation_data,
-            timeout=10,
+            f"{self.base_url}/annotations/batch",
+            json=batch_data,
+            timeout=30,
         )
         response.raise_for_status()
         return response.json()
 
-    def update_annotation(self, annotation_id: str, update_data: Dict) -> Dict:
-        """Update an existing annotation"""
-        response = self.session.put(
-            f"{self.base_url}/annotations/{annotation_id}", json=update_data, timeout=10
+    def get_annotation_conflicts(self, image_id: str) -> Dict:
+        """Get conflicts for annotations on a specific image"""
+        response = self.session.get(
+            f"{self.base_url}/annotations/{image_id}/conflicts", timeout=10
         )
         response.raise_for_status()
         return response.json()
 
-    def delete_annotation(self, annotation_id: str) -> Dict:
-        """Delete an annotation"""
-        response = self.session.delete(
-            f"{self.base_url}/annotations/{annotation_id}", timeout=10
+    def get_annotation_statistics(self) -> Dict:
+        """Get comprehensive statistics about annotations"""
+        response = self.session.get(
+            f"{self.base_url}/annotations/statistics", timeout=10
         )
         response.raise_for_status()
         return response.json()

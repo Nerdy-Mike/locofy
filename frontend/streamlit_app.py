@@ -2,10 +2,16 @@
 import io
 import json
 import os
+import sys
+from pathlib import Path
 
 from PIL import Image
 
 import streamlit as st
+
+# Add the frontend directory to Python path for imports
+frontend_dir = Path(__file__).parent
+sys.path.insert(0, str(frontend_dir))
 
 # Import API client
 from utils.api_client import UILabelingAPIClient
@@ -479,12 +485,186 @@ if page == "🏠 Image Management":
             with st.expander("🔧 Debug Information"):
                 st.code(f"Error details: {str(e)}")
 
-# === OTHER PAGES (Placeholder for now) ===
+# === PAGE: ANNOTATION TOOL ===
 elif page == "📝 Annotation Tool":
     st.header("📝 Annotation Tool")
-    st.info(
-        "🚧 **Phase 1.1 Implementation**\n\nAnnotation features are implemented in the current system. Navigate via image gallery 'Edit' buttons."
-    )
+    st.markdown("Draw bounding boxes and assign tags to UI elements in your images.")
+
+    # Image selection
+    st.subheader("🖼️ Select Image to Annotate")
+
+    try:
+        images = api_client.list_images()
+
+        if not images:
+            st.warning(
+                "📥 **No images available**\n\nPlease upload some images first in the Image Management section."
+            )
+        else:
+            # Image selection dropdown
+            image_options = {
+                f"{img['filename']} ({img['id'][:8]}...)": img["id"] for img in images
+            }
+            selected_display = st.selectbox(
+                "Choose an image to annotate:",
+                options=list(image_options.keys()),
+                help="Select an image from your uploaded images",
+            )
+
+            if selected_display:
+                selected_image_id = image_options[selected_display]
+                selected_image = next(
+                    img for img in images if img["id"] == selected_image_id
+                )
+
+                # Display image info
+                col1, col2, col3 = st.columns(3)
+                with col1:
+                    st.metric(
+                        "📏 Dimensions",
+                        f"{selected_image['width']}×{selected_image['height']}",
+                    )
+                with col2:
+                    st.metric(
+                        "📝 Annotations", selected_image.get("annotation_count", 0)
+                    )
+                with col3:
+                    st.metric("📄 Format", selected_image["format"])
+
+                st.markdown("---")
+
+                # Load image data and existing annotations
+                try:
+                    image_content = api_client.get_image_file(selected_image_id)
+                    existing_annotations = api_client.get_annotations(selected_image_id)
+
+                    # Import annotation canvas components
+                    import io
+
+                    from components.annotation_canvas import (
+                        annotation_controls,
+                        create_annotation_canvas,
+                    )
+
+                    # Create annotation interface
+                    st.subheader("🎨 Annotation Canvas")
+
+                    # Create the annotation canvas
+                    image_bytes = io.BytesIO(image_content)
+                    session = create_annotation_canvas(
+                        image_data=image_bytes,
+                        image_id=selected_image_id,
+                        existing_annotations=existing_annotations,
+                        session_key=f"annotation_session_{selected_image_id}",
+                    )
+
+                    # Annotation controls
+                    if session and hasattr(session, "draft_annotations"):
+                        st.subheader("🛠️ Annotation Controls")
+                        action = annotation_controls(session)
+                    else:
+                        action = None
+
+                    # Handle save action
+                    if action == "save":
+                        try:
+                            with st.spinner("💾 Saving annotations..."):
+                                # Get annotations in API format
+                                annotations_to_save = session.get_annotations_for_api()
+
+                                # Save via API
+                                result = api_client.save_annotation_batch(
+                                    image_id=selected_image_id,
+                                    created_by="streamlit_user",  # Could be made configurable
+                                    annotations=annotations_to_save,
+                                )
+
+                                # Show results
+                                if result.get("saved_count", 0) > 0:
+                                    st.success(
+                                        f"✅ Successfully saved {result['saved_count']} annotations!"
+                                    )
+
+                                    # Show conflicts if any
+                                    if result.get("conflicts"):
+                                        st.warning(
+                                            f"⚠️ {len(result['conflicts'])} conflicts detected:"
+                                        )
+                                        for conflict in result["conflicts"]:
+                                            st.write(
+                                                f"- Overlap with existing annotation (IoU: {conflict.get('iou_score', 0):.2f})"
+                                            )
+
+                                    # Show warnings if any
+                                    if result.get("warnings"):
+                                        for warning in result["warnings"]:
+                                            st.warning(f"⚠️ Warning: {warning}")
+
+                                    # Clear the session after successful save
+                                    session.draft_annotations = []
+
+                                    # Show processing time
+                                    st.info(
+                                        f"⏱️ Processing time: {result.get('processing_time', 0):.2f} seconds"
+                                    )
+
+                                    # Trigger refresh
+                                    st.rerun()
+                                else:
+                                    st.error("❌ No annotations were saved")
+
+                        except Exception as e:
+                            st.error(f"❌ Error saving annotations: {str(e)}")
+
+                            # Show API error details if available
+                            if hasattr(e, "response") and hasattr(e.response, "json"):
+                                try:
+                                    error_detail = e.response.json()
+                                    if "errors" in error_detail.get("detail", {}):
+                                        st.write("**Validation Errors:**")
+                                        for error in error_detail["detail"]["errors"]:
+                                            st.write(
+                                                f"- {error['field']}: {error['message']}"
+                                            )
+                                except:
+                                    pass
+
+                    # Display existing annotations summary
+                    if existing_annotations:
+                        st.markdown("---")
+                        st.subheader("📋 Existing Annotations")
+
+                        # Summary by tag
+                        tag_counts = {}
+                        for ann in existing_annotations:
+                            tag = ann.get("tag", "unknown")
+                            tag_counts[tag] = tag_counts.get(tag, 0) + 1
+
+                        cols = st.columns(len(tag_counts) if tag_counts else 1)
+                        for i, (tag, count) in enumerate(tag_counts.items()):
+                            with cols[i % len(cols)]:
+                                st.metric(f"{tag.title()}", count)
+
+                        # Detailed list
+                        with st.expander(
+                            f"View all {len(existing_annotations)} annotations"
+                        ):
+                            for i, ann in enumerate(existing_annotations):
+                                bbox = ann["bounding_box"]
+                                col1, col2 = st.columns([2, 1])
+                                with col1:
+                                    # Show annotation info
+                                    base_info = f"**{i+1}.** {ann['tag'].title()} at ({bbox['x']}, {bbox['y']}) {bbox['width']}×{bbox['height']}"
+                                    st.write(f"{base_info}")
+                                with col2:
+                                    st.write(f"Status: {ann.get('status', 'active')}")
+
+                except Exception as e:
+                    st.error(f"❌ Error loading image or annotations: {str(e)}")
+
+    except Exception as e:
+        st.error(f"❌ Error loading images: {str(e)}")
+        st.code(f"Error details: {str(e)}")
 
 elif page == "🤖 AI Predictions":
     st.header("🤖 AI Predictions")

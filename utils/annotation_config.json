@@ -1,0 +1,181 @@
+{
+  "ui_element_types": {
+    "button": {
+      "display_name": "Button",
+      "description": "Clickable button elements",
+      "color": "#007bff",
+      "manual_suggestions": [
+        "Login Button",
+        "Submit Button",
+        "Cancel Button",
+        "Save Button",
+        "Delete Button",
+        "Close Button",
+        "Download Button",
+        "Upload Button",
+        "Search Button",
+        "Next Button",
+        "Previous Button",
+        "Home Button",
+        "Sign Up Button",
+        "Add to Cart Button",
+        "Checkout Button",
+        "Back Button",
+        "Continue Button",
+        "Confirm Button"
+      ]
+    },
+    "input": {
+      "display_name": "Input Field",
+      "description": "Text input and form fields",
+      "color": "#28a745",
+      "manual_suggestions": [
+        "Email Input",
+        "Password Input",
+        "Username Input",
+        "Search Input",
+        "Name Input",
+        "Phone Input",
+        "Address Input",
+        "Message Input",
+        "Comment Input",
+        "Text Field",
+        "Number Input",
+        "Date Input",
+        "First Name Field",
+        "Last Name Field",
+        "Company Field",
+        "Zip Code Field",
+        "Credit Card Field",
+        "CVV Field"
+      ]
+    },
+    "radio": {
+      "display_name": "Radio Button",
+      "description": "Single-select radio button groups",
+      "color": "#ffc107",
+      "manual_suggestions": [
+        "Gender Selection",
+        "Payment Method",
+        "Size Option",
+        "Color Choice",
+        "Language Preference",
+        "Theme Selection",
+        "Plan Selection",
+        "Rating Option",
+        "Yes/No Choice",
+        "Option Group",
+        "Delivery Method",
+        "Priority Level",
+        "Account Type",
+        "Subscription Plan"
+      ]
+    },
+    "dropdown": {
+      "display_name": "Dropdown Menu",
+      "description": "Dropdown select menus",
+      "color": "#6f42c1",
+      "manual_suggestions": [
+        "Country Dropdown",
+        "State Dropdown",
+        "Category Dropdown",
+        "Language Dropdown",
+        "Currency Dropdown",
+        "Date Dropdown",
+        "Status Dropdown",
+        "Priority Dropdown",
+        "Filter Dropdown",
+        "Sort Options",
+        "Department List",
+        "Product Category",
+        "Time Zone Selector",
+        "Industry Selector"
+      ]
+    },
+    "checkbox": {
+      "display_name": "Checkbox",
+      "description": "Multi-select checkbox elements",
+      "color": "#17a2b8",
+      "manual_suggestions": [
+        "Terms Checkbox",
+        "Newsletter Subscription",
+        "Privacy Agreement",
+        "Remember Me",
+        "Enable Notifications",
+        "Feature Toggle",
+        "Permission Checkbox",
+        "Category Filter",
+        "Option Selector"
+      ]
+    },
+    "link": {
+      "display_name": "Link",
+      "description": "Clickable links and navigation",
+      "color": "#dc3545",
+      "manual_suggestions": [
+        "Navigation Link",
+        "External Link",
+        "Download Link",
+        "Email Link",
+        "Phone Link",
+        "Social Media Link",
+        "Help Link",
+        "Terms Link",
+        "Privacy Link",
+        "Contact Link"
+      ]
+    },
+    "image": {
+      "display_name": "Image",
+      "description": "Images, icons, and visual elements",
+      "color": "#fd7e14",
+      "manual_suggestions": [
+        "Logo Image",
+        "Profile Picture",
+        "Product Image",
+        "Icon",
+        "Banner Image",
+        "Thumbnail",
+        "Background Image",
+        "Gallery Image",
+        "Avatar Image"
+      ]
+    },
+    "text": {
+      "display_name": "Text",
+      "description": "Text labels, headings, and content",
+      "color": "#6c757d",
+      "manual_suggestions": [
+        "Page Title",
+        "Section Header",
+        "Label Text",
+        "Description Text",
+        "Error Message",
+        "Success Message",
+        "Help Text",
+        "Caption",
+        "Copyright Text"
+      ]
+    }
+  },
+  "validation_rules": {
+    "min_box_width": 10,
+    "min_box_height": 10,
+    "overlap_threshold": 0.3,
+    "max_annotations_per_batch": 50
+  },
+  "display_settings": {
+    "canvas_colors": {
+      "draft": "#007bff",
+      "tagged": "#28a745",
+      "existing": "#6c757d",
+      "temporary": "#ffc107"
+    },
+    "box_styles": {
+      "draft": "dashed",
+      "tagged": "solid",
+      "existing": "solid",
+      "temporary": "dotted"
+    }
+  }
+}

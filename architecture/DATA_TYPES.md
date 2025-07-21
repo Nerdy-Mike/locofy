@@ -4,6 +4,25 @@
 
 This document serves as the single source of truth for all data types used throughout the UI Component Labeling System. All components must adhere to these type definitions to ensure consistency and interoperability.
 
+## 🔄 Recent Updates (Phase 1.1)
+
+### Data Model Simplification
+**Business Requirement**: Streamline the annotation process to focus only on core UI element classification.
+
+**Changes Made:**
+- ❌ **Removed `manual_name` fields** from all annotation models
+- ✅ **Simplified workflow** to: Draw → Tag → Save
+- ✅ **Four core UI element types**: button, input, radio, dropdown
+- ✅ **Cleaner JSON output** without optional naming fields
+- ✅ **Faster annotation process** with reduced cognitive load
+
+**Affected Models:**
+- `Annotation` - Removed `manual_name: Optional[str]` field
+- `AnnotationRequest` - Removed `manual_name: Optional[str]` field  
+- `DraftAnnotation` - Removed `manual_name: Optional[str]` field
+
+This simplification aligns with business requirements to focus on essential UI element classification without complex manual naming workflows.
+
 ---
 
 ## Core Enums
@@ -192,7 +211,7 @@ class ImageValidationResult(BaseModel):
 
 ## Annotation Types
 
-### Annotation
+### Annotation (Simplified Model)
 ```python
 from typing import List
 
@@ -200,7 +219,7 @@ class Annotation(BaseModel):
     id: str                                    # Unique identifier (UUID)
     image_id: str                             # Reference to image
     bounding_box: BoundingBox                 # Element coordinates
-    tag: UIElementTag                         # UI element classification
+    tag: UIElementTag                         # UI element classification (button, input, radio, dropdown)
     confidence: Optional[float] = None        # 0.0 to 1.0, optional
     created_by: str                           # Annotator identifier
     created_at: datetime                      # Creation timestamp
@@ -213,15 +232,13 @@ class Annotation(BaseModel):
     reasoning: Optional[str] = None           # Optional explanation
 ```
 
-### AnnotationRequest
+### AnnotationRequest (Simplified Model)
 ```python
 class AnnotationRequest(BaseModel):
-    image_id: str
-    bounding_box: BoundingBox
-    tag: UIElementTag
-    confidence: Optional[float] = None
-    created_by: str
-    reasoning: Optional[str] = None
+    bounding_box: BoundingBox                 # Element coordinates
+    tag: UIElementTag                         # Required: button, input, radio, dropdown
+    confidence: Optional[float] = None        # 0.0 to 1.0, optional
+    reasoning: Optional[str] = None           # Optional explanation
 ```
 
 ### AnnotationResponse

@@ -387,7 +387,469 @@ if response.get("validation_result"):
 *Note: The following sections will be populated as we implement additional features*
 
 ### 2. Annotation Data Flow
-*To be documented when implementing annotation features*
+
+#### High-Level Overview
+```mermaid
+graph TD
+    A[User Loads Image] --> B[User Draws Multiple Boxes]
+    B --> C[User Assigns Tags to Boxes]
+    C --> D[User Clicks Save]
+    D --> E[Backend Batch Validation]
+    E --> F[Conflict Detection]
+    F --> G{Validation Passed?}
+    G -->|Yes| H[Save Annotation Batch]
+    G -->|No| I[Return Validation Errors]
+    H --> J[Update Quality Metrics]
+    J --> K[Response to Frontend]
+    K --> L[UI Update with New Annotations]
+    I --> M[Show Errors to User]
+    M --> N[User Fixes Issues]
+    N --> D
+```
+
+#### Detailed Sequence Diagram
+```mermaid
+sequenceDiagram
+    participant User as 👤 User
+    participant SF as 🎨 Streamlit Frontend
+    participant API as 🔧 FastAPI Backend
+    participant QC as 🔍 Quality Checker
+    participant FS as 💾 FileStorageManager
+    participant AS as 📊 AnnotationStorage
+    
+    User->>SF: Load image for annotation
+    SF->>API: GET /annotations/{image_id}
+    API->>AS: Load existing annotations
+    AS-->>API: Return existing annotations
+    API-->>SF: HTTP 200 + existing annotations
+    SF->>SF: Render image with existing annotations
+    
+    Note over User,SF: Drawing Phase - Multiple Boxes
+    User->>SF: Mouse down (start drawing box #1)
+    SF->>SF: Set drawing_active = true
+    SF->>SF: Track start coordinates
+    
+    User->>SF: Mouse move (drag)
+    SF->>SF: Calculate current box dimensions
+    SF->>SF: Render temporary rectangle (real-time)
+    
+    User->>SF: Mouse up (finish drawing box #1)
+    SF->>SF: Validate minimum box size
+    SF->>SF: Add to draft_annotations array
+    SF->>SF: Render as draft box (dashed border)
+    
+    User->>SF: Draw box #2 (repeat mouse interaction)
+    SF->>SF: Add second draft annotation
+    User->>SF: Draw box #3 (repeat mouse interaction)
+    SF->>SF: Add third draft annotation
+    
+    Note over User,SF: Tag Assignment Phase
+    User->>SF: Click on draft box #1
+    SF->>SF: Show tag selection dropdown
+    User->>SF: Select "button" tag
+    SF->>SF: Update draft annotation with tag
+    SF->>SF: Change visual style (solid border)
+    
+    User->>SF: Assign tags to boxes #2 and #3
+    SF->>SF: Update draft annotations
+    
+    Note over User,API: Batch Save Phase
+    User->>SF: Click "Save Annotations"
+    SF->>SF: Validate all drafts have tags
+    SF->>API: POST /annotations/batch
+    Note over SF,API: BatchAnnotationRequest with all annotations
+    
+    API->>API: Validate request structure
+    API->>QC: validate_annotation_batch(annotations, image_id)
+    
+    QC->>QC: Individual annotation validation
+    Note over QC: Check coordinates, box sizes, required fields
+    
+    QC->>AS: Load existing annotations for conflict check
+    AS-->>QC: Return existing annotations
+    QC->>QC: Calculate IoU overlaps
+    QC->>QC: Detect tag conflicts
+    QC-->>API: Return ValidationResult
+    
+    alt Validation Successful
+        API->>FS: Begin transaction
+        loop For each annotation
+            API->>AS: save_annotation(annotation)
+            AS->>AS: Generate UUID
+            AS->>AS: Set status based on conflicts
+            AS->>FS: Write to data/annotations/{image_id}.json
+        end
+        API->>FS: Commit transaction
+        
+        API->>QC: update_quality_metrics(image_id)
+        QC->>QC: Recalculate annotation count
+        QC->>QC: Update agreement scores if multiple annotators
+        QC->>FS: Save updated quality metrics
+        
+        API-->>SF: HTTP 200 + BatchAnnotationResponse
+        Note over API,SF: saved_count, annotation_ids, conflicts
+        
+        SF->>SF: Clear draft annotations
+        SF->>SF: Reload image with all annotations
+        SF->>User: Show "✅ 3 annotations saved successfully"
+        
+    else Validation Failed
+        API-->>SF: HTTP 400 + Validation Errors
+        Note over API,SF: errors: ["Box #2 too small", "Box #3 outside bounds"]
+        
+        SF->>SF: Highlight problematic draft boxes in red
+        SF->>SF: Show error messages
+        SF->>User: Display validation errors
+        User->>SF: Fix issues (redraw or adjust)
+        Note over User,SF: User can modify drafts and retry save
+    end
+```
+
+#### Current Implementation Status (Updated: Phase 1.1)
+
+**✅ Phase 1.1 Core Features Completed:**
+- Image upload and validation system
+- Enhanced FastAPI backend with comprehensive error handling
+- File storage management with metadata
+- Basic annotation data models
+- Streamlit frontend with image gallery
+- Import path resolution fixes for Docker deployment
+
+**⚠️ Known Limitation - Annotation Canvas JavaScript Communication:**
+The annotation canvas has a JavaScript-to-Python communication limitation in Streamlit. The canvas correctly draws bounding boxes and stores them in the JavaScript local state, but transferring these annotations to the Python session state is not fully implemented.
+
+**Current Workaround:**
+- ✅ Canvas draws boxes visually (working)
+- ⚠️ "Sync Annotations" button in canvas (partially implemented)
+- ✅ "🧪 Add Test Box" button to manually create annotations for testing
+- ✅ Manual annotation entry in debug section for precise coordinate input
+- ✅ Annotation controls for tagging (working when annotations exist)
+- ✅ Save functionality to backend API (working)
+
+**Technical Issue:**
+Streamlit's `components.html()` doesn't provide a reliable way to receive `postMessage` data from JavaScript back to Python. The JavaScript sends messages via `window.parent.postMessage()`, but there's no listener on the Python side.
+
+**Simplified Data Model (Business Requirement):**
+- ❌ Removed manual annotation names feature (business decision)
+- ✅ Streamlined to core UI element tagging only: button, input, radio, dropdown
+- ✅ Simplified workflow: Draw → Tag → Save
+- ✅ Cleaner JSON output without unnecessary fields
+
+**Future Solutions:**
+1. **Custom Streamlit Component**: Build a proper bidirectional component
+2. **Alternative Interaction Model**: Use different approach (e.g., form-based coordinate input)
+3. **WebSocket Integration**: Real-time communication channel
+
+#### Data Structures
+
+**Frontend Draft State (Simplified Model):**
+```python
+class DraftAnnotation(BaseModel):
+    temp_id: str                    # Temporary ID (e.g., "temp_1")
+    bounding_box: BoundingBox       # Coordinates from drawing
+    tag: Optional[UIElementTag] = None  # User-assigned tag (button, input, radio, dropdown)
+    created_at: datetime            # Local creation time
+    
+class AnnotationSession(BaseModel):
+    image_id: str
+    draft_annotations: List[DraftAnnotation] = []
+    is_drawing: bool = False
+    current_temp_box: Optional[BoundingBox] = None
+    
+    def add_draft(self, bbox: BoundingBox) -> str:
+        """Add new draft annotation and return temp ID"""
+        temp_id = f"temp_{len(self.draft_annotations) + 1}"
+        draft = DraftAnnotation(
+            temp_id=temp_id,
+            bounding_box=bbox,
+            created_at=datetime.now()
+        )
+        self.draft_annotations.append(draft)
+        return temp_id
+    
+    def assign_tag(self, temp_id: str, tag: UIElementTag):
+        """Assign UI element tag to a draft annotation"""
+        for draft in self.draft_annotations:
+            if draft.temp_id == temp_id:
+                draft.tag = tag
+                break
+    
+    def ready_to_save(self) -> bool:
+        """Check if all drafts have tags assigned"""
+        return len(self.draft_annotations) > 0 and all(
+            draft.tag is not None for draft in self.draft_annotations
+        )
+```
+
+**API Request/Response Models (Simplified):**
+```python
+class BatchAnnotationRequest(BaseModel):
+    image_id: str
+    created_by: str                 # Annotator identifier
+    annotations: List[AnnotationRequest]
+    
+class AnnotationRequest(BaseModel):
+    bounding_box: BoundingBox
+    tag: UIElementTag               # Required: button, input, radio, dropdown
+    confidence: Optional[float] = None
+    reasoning: Optional[str] = None
+
+class BatchAnnotationResponse(BaseModel):
+    saved_count: int
+    annotation_ids: List[str]       # UUIDs of saved annotations
+    conflicts: List[ConflictInfo] = []
+    warnings: List[str] = []
+    processing_time: float          # Seconds
+    
+class ValidationResult(BaseModel):
+    valid: bool
+    errors: List[ValidationError] = []
+    warnings: List[ValidationWarning] = []
+    conflicts: List[ConflictInfo] = []
+```
+
+**Storage Format:**
+```bash
+data/
+├── annotations/
+│   └── {image_uuid}.json         # All annotations for an image
+└── quality/
+    └── {image_uuid}.json         # Quality metrics for an image
+```
+
+**Annotation File Structure (Simplified):**
+```json
+{
+  "image_id": "550e8400-e29b-41d4-a716-446655440000",
+  "last_updated": "2024-01-01T15:30:00.000Z",
+  "annotation_count": 3,
+  "annotations": [
+    {
+      "id": "ann_001",
+      "bounding_box": {"x": 50, "y": 100, "width": 120, "height": 40},
+      "tag": "button",
+      "confidence": null,
+      "created_by": "user_123",
+      "created_at": "2024-01-01T15:25:00.000Z",
+      "status": "active",
+      "conflicts_with": [],
+      "reasoning": null
+    },
+    {
+      "id": "ann_002", 
+      "bounding_box": {"x": 200, "y": 150, "width": 180, "height": 35},
+      "tag": "input",
+      "confidence": null,
+      "created_by": "user_123",
+      "created_at": "2024-01-01T15:26:00.000Z",
+      "status": "conflicted",
+      "conflicts_with": ["ann_004"]
+    }
+  ]
+}
+```
+
+#### Validation Rules
+
+**Individual Annotation Validation:**
+```python
+def validate_single_annotation(annotation: AnnotationRequest, 
+                              image_metadata: ImageMetadata) -> List[ValidationError]:
+    """Validate individual annotation"""
+    errors = []
+    bbox = annotation.bounding_box
+    
+    # Size validation
+    if bbox.width < MIN_BOX_WIDTH or bbox.height < MIN_BOX_HEIGHT:
+        errors.append(ValidationError(
+            field="bounding_box",
+            message=f"Box too small (minimum {MIN_BOX_WIDTH}x{MIN_BOX_HEIGHT})",
+            value=f"{bbox.width}x{bbox.height}"
+        ))
+    
+    # Boundary validation
+    if (bbox.x < 0 or bbox.y < 0 or 
+        bbox.x + bbox.width > image_metadata.dimensions.width or
+        bbox.y + bbox.height > image_metadata.dimensions.height):
+        errors.append(ValidationError(
+            field="bounding_box", 
+            message="Box extends outside image boundaries",
+            value=f"Image: {image_metadata.dimensions.width}x{image_metadata.dimensions.height}"
+        ))
+    
+    # Tag validation
+    if annotation.tag not in UIElementTag.__members__.values():
+        errors.append(ValidationError(
+            field="tag",
+            message="Invalid UI element tag",
+            value=str(annotation.tag)
+        ))
+    
+    return errors
+
+def validate_annotation_batch(annotations: List[AnnotationRequest],
+                            image_id: str) -> ValidationResult:
+    """Validate entire annotation batch"""
+    errors = []
+    warnings = []
+    conflicts = []
+    
+    # Load image metadata
+    image_metadata = load_image_metadata(image_id)
+    
+    # 1. Individual validation
+    for i, annotation in enumerate(annotations):
+        annotation_errors = validate_single_annotation(annotation, image_metadata)
+        for error in annotation_errors:
+            error.field = f"annotation_{i}.{error.field}"
+            errors.append(error)
+    
+    # 2. Cross-annotation validation (within batch)
+    for i, ann1 in enumerate(annotations):
+        for j, ann2 in enumerate(annotations[i+1:], i+1):
+            iou = calculate_iou(ann1.bounding_box, ann2.bounding_box)
+            if iou > OVERLAP_THRESHOLD:
+                conflicts.append(ConflictInfo(
+                    annotation_id=f"temp_{i}",
+                    conflicts_with=[f"temp_{j}"],
+                    conflict_type=ConflictType.OVERLAP,
+                    severity=iou,
+                    iou_score=iou
+                ))
+    
+    # 3. Conflict with existing annotations
+    existing_annotations = load_existing_annotations(image_id)
+    for i, new_annotation in enumerate(annotations):
+        for existing in existing_annotations:
+            iou = calculate_iou(new_annotation.bounding_box, existing.bounding_box)
+            if iou > OVERLAP_THRESHOLD:
+                conflicts.append(ConflictInfo(
+                    annotation_id=f"temp_{i}",
+                    conflicts_with=[existing.id],
+                    conflict_type=ConflictType.OVERLAP,
+                    severity=iou,
+                    iou_score=iou
+                ))
+    
+    return ValidationResult(
+        valid=len(errors) == 0,
+        errors=errors,
+        warnings=warnings,
+        conflicts=conflicts
+    )
+```
+
+#### Configuration Settings
+
+```python
+# Validation Thresholds
+MIN_BOX_WIDTH = 10              # Minimum box width in pixels
+MIN_BOX_HEIGHT = 10             # Minimum box height in pixels
+OVERLAP_THRESHOLD = 0.5         # IoU threshold for conflict detection
+MAX_ANNOTATIONS_PER_BATCH = 50  # Prevent extremely large batches
+
+# Visual Settings (Frontend)
+DRAFT_BOX_COLOR = "#007bff"     # Blue for draft annotations
+TAGGED_BOX_COLOR = "#28a745"    # Green for tagged annotations  
+CONFLICT_BOX_COLOR = "#dc3545"  # Red for conflicted annotations
+EXISTING_BOX_COLOR = "#6c757d"  # Gray for existing annotations
+
+# Performance Settings
+BATCH_SAVE_TIMEOUT = 30         # Seconds
+MAX_CONFLICT_CHECKS = 1000      # Prevent excessive computation
+```
+
+#### Error Scenarios
+
+| Error Type            | HTTP Code | Response Example                                                                               | Frontend Action                                  |
+| --------------------- | --------- | ---------------------------------------------------------------------------------------------- | ------------------------------------------------ |
+| **Validation Errors** | 400       | `{"detail": {"errors": [{"field": "annotation_0.bounding_box", "message": "Box too small"}]}}` | Highlight problematic boxes, show error messages |
+| **Missing Tags**      | 400       | `{"detail": "All annotations must have tags assigned"}`                                        | Highlight untagged boxes, prompt user            |
+| **Storage Failure**   | 500       | `{"detail": "Failed to save annotation batch"}`                                                | Show retry option, preserve draft state          |
+| **Conflict Warnings** | 200       | `{"saved_count": 3, "conflicts": [...]}`                                                       | Show conflict notifications, offer resolution    |
+| **Image Not Found**   | 404       | `{"detail": "Image not found"}`                                                                | Redirect to image selection                      |
+
+#### Performance Considerations
+
+**Frontend Optimizations:**
+```javascript
+// Debounced real-time rendering during drawing
+const renderTempBox = debounce((box) => {
+    updateCanvasOverlay(box);
+}, 16); // ~60fps
+
+// Efficient draft state management
+const addDraftAnnotation = (bbox) => {
+    setDraftAnnotations(prev => [...prev, {
+        temp_id: `temp_${Date.now()}`,
+        bounding_box: bbox,
+        tag: null
+    }]);
+};
+```
+
+**Backend Optimizations:**
+```python
+# Batch processing with transaction support
+async def save_annotation_batch(annotations: List[AnnotationRequest], 
+                               image_id: str) -> BatchAnnotationResponse:
+    """Save multiple annotations atomically"""
+    
+    async with database_transaction():
+        saved_annotations = []
+        
+        for annotation_request in annotations:
+            # Create annotation with UUID
+            annotation = Annotation(
+                id=str(uuid.uuid4()),
+                image_id=image_id,
+                **annotation_request.dict()
+            )
+            
+            # Determine status based on conflicts
+            conflicts = await detect_conflicts(annotation, image_id)
+            annotation.status = AnnotationStatus.CONFLICTED if conflicts else AnnotationStatus.ACTIVE
+            
+            # Save to storage
+            await annotation_storage.save(annotation)
+            saved_annotations.append(annotation)
+        
+        # Update quality metrics once per batch
+        await quality_service.update_metrics(image_id)
+        
+        return BatchAnnotationResponse(
+            saved_count=len(saved_annotations),
+            annotation_ids=[ann.id for ann in saved_annotations],
+            conflicts=await get_all_conflicts(image_id)
+        )
+```
+
+**Memory Management:**
+```python
+# Limit batch size to prevent memory issues
+MAX_BATCH_SIZE = 50
+
+# Efficient conflict detection with early termination
+def detect_conflicts_optimized(new_annotations: List[Annotation], 
+                              existing_annotations: List[Annotation]) -> List[ConflictInfo]:
+    """Optimized conflict detection with spatial indexing"""
+    conflicts = []
+    
+    # Use spatial indexing for large annotation sets
+    if len(existing_annotations) > 100:
+        spatial_index = build_spatial_index(existing_annotations)
+        for new_ann in new_annotations:
+            nearby = spatial_index.query(new_ann.bounding_box)
+            conflicts.extend(check_conflicts(new_ann, nearby))
+    else:
+        # Simple O(n²) for small sets
+        for new_ann in new_annotations:
+            conflicts.extend(check_conflicts(new_ann, existing_annotations))
+    
+    return conflicts
+```
+
+---
 
 ### 3. LLM Prediction Data Flow  
 *To be documented when implementing prediction features*

@@ -474,6 +474,12 @@ class FileStorageManager:
                         ann_data["updated_at"] = datetime.fromisoformat(
                             ann_data["updated_at"].replace("Z", "+00:00")
                         )
+                    if "reviewed_at" in ann_data and isinstance(
+                        ann_data["reviewed_at"], str
+                    ):
+                        ann_data["reviewed_at"] = datetime.fromisoformat(
+                            ann_data["reviewed_at"].replace("Z", "+00:00")
+                        )
 
                     annotation = Annotation(**ann_data)
                     annotations.append(annotation)
@@ -485,6 +491,254 @@ class FileStorageManager:
         except Exception as e:
             logger.error(f"Failed to load annotations for {image_id}: {e}")
             return []
+
+    def load_annotations(self, image_id: str) -> List[Annotation]:
+        """Alias for get_annotations for consistency with validation service"""
+        return self.get_annotations(image_id)
+
+    def save_annotation_batch(self, annotations: List[Annotation]) -> bool:
+        """
+        Save multiple annotations atomically for a single image
+        
+        Args:
+            annotations: List of annotations to save (must all be for same image)
+            
+        Returns:
+            bool: True if all annotations saved successfully
+            
+        Raises:
+            FileStorageError: If batch save fails
+        """
+        if not annotations:
+            return True
+            
+        # Verify all annotations are for the same image
+        image_id = annotations[0].image_id
+        if not all(ann.image_id == image_id for ann in annotations):
+            raise FileStorageError("All annotations in batch must be for the same image")
+        
+        try:
+            # Load existing annotations
+            existing_annotations = self.get_annotations(image_id)
+            
+            # Combine existing and new annotations
+            all_annotations = existing_annotations + annotations
+            
+            # Save all annotations atomically
+            self.save_annotations(image_id, all_annotations)
+            
+            logger.info(f"Successfully saved batch of {len(annotations)} annotations for image {image_id}")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Failed to save annotation batch for {image_id}: {e}")
+            raise FileStorageError(f"Cannot save annotation batch: {e}")
+
+    def update_annotation_status(self, image_id: str, annotation_id: str, 
+                               status: str, reviewed_by: Optional[str] = None) -> bool:
+        """
+        Update the status of a specific annotation
+        
+        Args:
+            image_id: ID of the image
+            annotation_id: ID of the annotation to update
+            status: New status value
+            reviewed_by: Optional reviewer identifier
+            
+        Returns:
+            bool: True if update successful
+        """
+        try:
+            annotations = self.get_annotations(image_id)
+            
+            # Find and update the specific annotation
+            updated = False
+            for annotation in annotations:
+                if annotation.id == annotation_id:
+                    annotation.status = status
+                    if reviewed_by:
+                        annotation.reviewed_by = reviewed_by
+                        annotation.reviewed_at = datetime.utcnow()
+                    updated = True
+                    break
+            
+            if not updated:
+                logger.warning(f"Annotation {annotation_id} not found for image {image_id}")
+                return False
+            
+            # Save updated annotations
+            self.save_annotations(image_id, annotations)
+            
+            logger.info(f"Updated annotation {annotation_id} status to {status}")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Failed to update annotation status: {e}")
+            return False
+
+    def save_annotation_file_structure(self, image_id: str, annotations: List[Annotation]):
+        """
+        Save annotations in the enhanced file structure format
+        
+        Args:
+            image_id: ID of the image
+            annotations: List of annotations to save
+        """
+        try:
+            annotations_path = self.annotations_dir / f"{image_id}.json"
+            
+            # Create the enhanced file structure as documented in DATAFLOW.md
+            file_structure = {
+                "image_id": image_id,
+                "last_updated": datetime.utcnow().isoformat(),
+                "annotation_count": len(annotations),
+                "annotations": []
+            }
+            
+            # Convert annotations to dict format
+            for annotation in annotations:
+                ann_dict = annotation.dict()
+                
+                # Serialize datetime objects
+                def serialize_datetime(obj):
+                    if isinstance(obj, datetime):
+                        return obj.isoformat()
+                    elif isinstance(obj, dict):
+                        return {k: serialize_datetime(v) for k, v in obj.items()}
+                    elif isinstance(obj, list):
+                        return [serialize_datetime(item) for item in obj]
+                    return obj
+                
+                ann_dict = serialize_datetime(ann_dict)
+                file_structure["annotations"].append(ann_dict)
+            
+            # Write to file
+            with open(annotations_path, "w") as f:
+                json.dump(file_structure, f, indent=2, ensure_ascii=False)
+            
+            # Update image metadata annotation count and quality metrics
+            metadata = self.get_image_metadata(image_id)
+            if metadata:
+                metadata.annotation_count = len(annotations)
+                # Check for conflicts
+                metadata.has_conflicts = any(
+                    ann.status == "conflicted" for ann in annotations
+                )
+                
+                # Calculate simple quality score based on conflicts and annotation density
+                if len(annotations) > 0:
+                    conflict_ratio = sum(1 for ann in annotations if ann.status == "conflicted") / len(annotations)
+                    # Simple quality score: fewer conflicts = higher quality
+                    metadata.quality_score = max(0.0, 1.0 - conflict_ratio)
+                else:
+                    metadata.quality_score = None
+                    
+                self.save_image_metadata(metadata)
+            
+            logger.info(f"Saved {len(annotations)} annotations with enhanced structure for image {image_id}")
+            
+        except Exception as e:
+            logger.error(f"Failed to save annotation file structure for {image_id}: {e}")
+            raise FileStorageError(f"Cannot save annotation file structure: {e}")
+
+    def get_conflicted_annotations(self) -> List[Annotation]:
+        """
+        Get all annotations that have conflicts across all images
+        
+        Returns:
+            List[Annotation]: All conflicted annotations
+        """
+        conflicted_annotations = []
+        
+        try:
+            # Iterate through all annotation files
+            for annotations_file in self.annotations_dir.glob("*.json"):
+                try:
+                    image_id = annotations_file.stem
+                    annotations = self.get_annotations(image_id)
+                    
+                    # Filter for conflicted annotations
+                    conflicted = [
+                        ann for ann in annotations 
+                        if ann.status == "conflicted"
+                    ]
+                    conflicted_annotations.extend(conflicted)
+                    
+                except Exception as e:
+                    logger.warning(f"Error processing annotations file {annotations_file}: {e}")
+            
+            logger.info(f"Found {len(conflicted_annotations)} conflicted annotations")
+            return conflicted_annotations
+            
+        except Exception as e:
+            logger.error(f"Failed to get conflicted annotations: {e}")
+            return []
+
+    def get_annotation_statistics(self) -> Dict:
+        """
+        Get comprehensive statistics about annotations
+        
+        Returns:
+            Dict: Statistics about annotations across all images
+        """
+        try:
+            stats = {
+                "total_annotations": 0,
+                "annotations_by_status": {},
+                "annotations_by_tag": {},
+                "images_with_annotations": 0,
+                "images_with_conflicts": 0,
+                "average_annotations_per_image": 0
+            }
+            
+            images_with_annotations = 0
+            images_with_conflicts = 0
+            
+            # Process all annotation files
+            for annotations_file in self.annotations_dir.glob("*.json"):
+                try:
+                    image_id = annotations_file.stem
+                    annotations = self.get_annotations(image_id)
+                    
+                    if annotations:
+                        images_with_annotations += 1
+                        stats["total_annotations"] += len(annotations)
+                        
+                        # Check for conflicts
+                        has_conflicts = any(ann.status == "conflicted" for ann in annotations)
+                        if has_conflicts:
+                            images_with_conflicts += 1
+                        
+                        # Count by status
+                        for annotation in annotations:
+                            status = annotation.status
+                            stats["annotations_by_status"][status] = (
+                                stats["annotations_by_status"].get(status, 0) + 1
+                            )
+                            
+                            # Count by tag
+                            tag = annotation.tag
+                            stats["annotations_by_tag"][tag] = (
+                                stats["annotations_by_tag"].get(tag, 0) + 1
+                            )
+                    
+                except Exception as e:
+                    logger.warning(f"Error processing annotation stats for {annotations_file}: {e}")
+            
+            stats["images_with_annotations"] = images_with_annotations
+            stats["images_with_conflicts"] = images_with_conflicts
+            
+            # Calculate average
+            if images_with_annotations > 0:
+                stats["average_annotations_per_image"] = round(
+                    stats["total_annotations"] / images_with_annotations, 2
+                )
+            
+            return stats
+            
+        except Exception as e:
+            logger.error(f"Failed to calculate annotation statistics: {e}")
+            return {"error": str(e)}
 
     def save_llm_predictions(self, predictions: LLMPrediction):
         """Save LLM predictions with error handling"""

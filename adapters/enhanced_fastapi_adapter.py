@@ -6,15 +6,30 @@ into your existing FastAPI application.
 """
 
 import logging
+import time
+from datetime import datetime
 from typing import List, Optional
 
-from fastapi import Depends, FastAPI, File, HTTPException, Path, UploadFile
-from fastapi.responses import JSONResponse, Response
+from fastapi import Depends, FastAPI, File, HTTPException, Path, UploadFile, status
+from fastapi.responses import FileResponse, JSONResponse, Response
 
-from models.annotation_models import ImageMetadata
+from models.annotation_models import (
+    Annotation,
+    AnnotationConfig,
+    AnnotationStatus,
+    BatchAnnotationRequest,
+    BatchAnnotationResponse,
+    ImageMetadata,
+    ValidationResult,
+)
 from models.validation_models import UIValidationRequest
+from services.annotation_validation_service import AnnotationValidationService
 from services.enhanced_upload_service import EnhancedUploadService, get_upload_service
+from services.quality_metrics_service import QualityMetricsService
 from utils.config import AppConfig, get_config, validate_environment
+from utils.file_storage import FileStorageManager
+
+# from .fastapi_adapter import FastAPIAdapter  # Not needed for standalone implementation
 
 logger = logging.getLogger(__name__)
 
@@ -372,12 +387,295 @@ async def get_statistics(
         raise HTTPException(status_code=500, detail="Failed to retrieve statistics")
 
 
+# === ANNOTATION ENDPOINTS ===
+
+# Initialize annotation services globally
+_annotation_config = AnnotationConfig()
+
+
+def get_annotation_validator(
+    upload_service: EnhancedUploadService = Depends(get_upload_service_dependency),
+) -> AnnotationValidationService:
+    """Dependency injection for annotation validation service"""
+    return AnnotationValidationService(
+        storage_manager=upload_service.storage_manager, config=_annotation_config
+    )
+
+
+def get_quality_metrics_service(
+    upload_service: EnhancedUploadService = Depends(get_upload_service_dependency),
+) -> QualityMetricsService:
+    """Dependency injection for quality metrics service"""
+    return QualityMetricsService(storage_manager=upload_service.storage_manager)
+
+
+@app.get("/annotations/{image_id}", response_model=List[Annotation])
+async def get_annotations(
+    image_id: str = Path(..., description="ID of the image"),
+    upload_service: EnhancedUploadService = Depends(get_upload_service_dependency),
+):
+    """
+    Get all annotations for a specific image
+
+    Args:
+        image_id: ID of the image to get annotations for
+
+    Returns:
+        List[Annotation]: All annotations for the image
+
+    Raises:
+        HTTPException: If image not found or error loading annotations
+    """
+    try:
+        # Verify image exists
+        image_metadata = upload_service.storage_manager.get_image_metadata(image_id)
+        if not image_metadata:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Image not found: {image_id}",
+            )
+
+        # Load annotations
+        annotations = upload_service.storage_manager.get_annotations(image_id)
+
+        logger.info(f"Retrieved {len(annotations)} annotations for image {image_id}")
+        return annotations
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error loading annotations for image {image_id}: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error loading annotations: {str(e)}",
+        )
+
+
+@app.post("/annotations/batch", response_model=BatchAnnotationResponse)
+async def save_annotation_batch(
+    request: BatchAnnotationRequest,
+    upload_service: EnhancedUploadService = Depends(get_upload_service_dependency),
+    annotation_validator: AnnotationValidationService = Depends(
+        get_annotation_validator
+    ),
+    quality_service: QualityMetricsService = Depends(get_quality_metrics_service),
+):
+    """
+    Save a batch of annotations for an image
+
+    Args:
+        request: BatchAnnotationRequest containing image_id, created_by, and annotations
+
+    Returns:
+        BatchAnnotationResponse: Results of the batch save operation
+
+    Raises:
+        HTTPException: If validation fails or save operation fails
+    """
+    start_time = time.time()
+
+    try:
+        # Verify image exists
+        image_metadata = upload_service.storage_manager.get_image_metadata(
+            request.image_id
+        )
+        if not image_metadata:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Image not found: {request.image_id}",
+            )
+
+        # Validate annotation batch
+        validation_result = annotation_validator.validate_annotation_batch(
+            annotations=request.annotations,
+            image_id=request.image_id,
+            created_by=request.created_by,
+        )
+
+        # If validation failed, return errors
+        if not validation_result.valid:
+            error_details = {
+                "message": "Annotation validation failed",
+                "errors": [
+                    {"field": err.field, "message": err.message, "value": err.value}
+                    for err in validation_result.errors
+                ],
+            }
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST, detail=error_details
+            )
+
+        # Convert requests to full annotation objects
+        annotations_to_save = []
+        for i, annotation_request in enumerate(request.annotations):
+            # Check if this specific annotation has conflicts
+            annotation_conflicts = [
+                conflict
+                for conflict in validation_result.conflicts
+                if conflict.annotation_id == f"temp_{i}"
+            ]
+
+            annotation = Annotation(
+                image_id=request.image_id,
+                bounding_box=annotation_request.bounding_box,
+                tag=annotation_request.tag,
+                confidence=annotation_request.confidence,
+                created_by=request.created_by,
+                status=(
+                    AnnotationStatus.CONFLICTED
+                    if annotation_conflicts
+                    else AnnotationStatus.ACTIVE
+                ),
+                reasoning=annotation_request.reasoning,
+            )
+
+            # Set conflicts if any found
+            if annotation_conflicts:
+                annotation.conflicts_with = []
+                for conflict in annotation_conflicts:
+                    annotation.conflicts_with.extend(conflict.conflicts_with)
+
+            annotations_to_save.append(annotation)
+
+        # Save annotation batch
+        success = upload_service.storage_manager.save_annotation_batch(
+            annotations_to_save
+        )
+
+        if not success:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to save annotation batch",
+            )
+
+        # Update quality metrics after successful save
+        quality_metrics = quality_service.update_image_quality_metrics(request.image_id)
+
+        # Calculate processing time
+        processing_time = time.time() - start_time
+
+        # Prepare response
+        response = BatchAnnotationResponse(
+            saved_count=len(annotations_to_save),
+            annotation_ids=[ann.id for ann in annotations_to_save],
+            conflicts=validation_result.conflicts,
+            warnings=[warn.message for warn in validation_result.warnings],
+            processing_time=processing_time,
+        )
+
+        logger.info(
+            f"Successfully saved batch of {len(annotations_to_save)} annotations "
+            f"for image {request.image_id} in {processing_time:.2f}s"
+            f"({len(validation_result.conflicts)} conflicts detected)"
+        )
+
+        return response
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error saving annotation batch: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error saving annotations: {str(e)}",
+        )
+
+
+@app.get("/annotations/{image_id}/conflicts")
+async def get_annotation_conflicts(
+    image_id: str = Path(..., description="ID of the image"),
+    upload_service: EnhancedUploadService = Depends(get_upload_service_dependency),
+):
+    """
+    Get conflicts for annotations on a specific image
+
+    Args:
+        image_id: ID of the image to check for conflicts
+
+    Returns:
+        Dict: Conflict information for the image
+    """
+    try:
+        # Verify image exists
+        image_metadata = upload_service.storage_manager.get_image_metadata(image_id)
+        if not image_metadata:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Image not found: {image_id}",
+            )
+
+        # Load annotations
+        annotations = upload_service.storage_manager.get_annotations(image_id)
+
+        # Filter for conflicted annotations
+        conflicted_annotations = [
+            ann for ann in annotations if ann.status == AnnotationStatus.CONFLICTED
+        ]
+
+        return {
+            "image_id": image_id,
+            "total_annotations": len(annotations),
+            "conflicted_annotations": len(conflicted_annotations),
+            "conflicts": [
+                {
+                    "annotation_id": ann.id,
+                    "conflicts_with": ann.conflicts_with,
+                    "tag": ann.tag,
+                    "created_by": ann.created_by,
+                    "created_at": ann.created_at.isoformat(),
+                    "bounding_box": ann.bounding_box.dict(),
+                }
+                for ann in conflicted_annotations
+            ],
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting conflicts for image {image_id}: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error getting conflicts: {str(e)}",
+        )
+
+
+@app.get("/annotations/statistics")
+async def get_annotation_statistics(
+    upload_service: EnhancedUploadService = Depends(get_upload_service_dependency),
+):
+    """
+    Get comprehensive statistics about annotations
+
+    Returns:
+        Dict: Statistics about annotations across all images
+    """
+    try:
+        stats = upload_service.storage_manager.get_annotation_statistics()
+
+        # Add validation configuration info
+        stats["configuration"] = {
+            "min_box_width": _annotation_config.min_box_width,
+            "min_box_height": _annotation_config.min_box_height,
+            "overlap_threshold": _annotation_config.overlap_threshold,
+            "max_annotations_per_batch": _annotation_config.max_annotations_per_batch,
+        }
+
+        return stats
+
+    except Exception as e:
+        logger.error(f"Error getting annotation statistics: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error getting statistics: {str(e)}",
+        )
+
+
 @app.get("/")
 async def root() -> dict:
     """Root endpoint with API information"""
     config = get_config()
     return {
-        "message": "🚀 Locofy Enhanced Upload Service with LLM Validation",
+        "message": "🚀 Locofy Enhanced Upload Service with LLM Validation & Annotations",
         "version": "1.2.0",
         "status": "operational",
         "llm_validation_enabled": config.llm_validation_enabled,
@@ -386,6 +684,10 @@ async def root() -> dict:
             "upload": "/images/upload",
             "upload_custom": "/images/upload-custom",
             "validation_stats": "/stats/validation",
+            "annotations": "/annotations/{image_id}",
+            "annotation_batch": "/annotations/batch",
+            "annotation_conflicts": "/annotations/{image_id}/conflicts",
+            "annotation_stats": "/annotations/statistics",
             "frontend": "http://localhost:8501",
         },
         "docs": "/docs",
