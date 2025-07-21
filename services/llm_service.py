@@ -18,7 +18,7 @@ class LLMUIDetectionService:
 
     def __init__(self, api_key: str):
         self.client = OpenAI(api_key=api_key)
-        self.llm_model = "gpt-4-vision-preview"
+        self.llm_model = "gpt-4o"  # Updated to current model
 
     def encode_image(self, image_path: str) -> str:
         """Encode image to base64 string for OpenAI API"""

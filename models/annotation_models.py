@@ -1,9 +1,14 @@
+from __future__ import annotations
+
 from datetime import datetime
 from enum import Enum
-from typing import List, Optional
+from typing import TYPE_CHECKING, List, Optional
 from uuid import uuid4
 
 from pydantic import BaseModel, Field, validator
+
+if TYPE_CHECKING:
+    from models.validation_models import ValidationResult
 
 
 class UIElementTag(str, Enum):
@@ -157,6 +162,11 @@ class ImageMetadata(BaseModel):
         None, description="Error message if processing failed"
     )
 
+    # LLM validation result
+    llm_validation_result: Optional[ValidationResult] = Field(
+        None, description="Result of LLM-based UI validation"
+    )
+
     @validator("width", "height")
     def validate_dimensions(cls, v):
         if v <= 0:
@@ -242,3 +252,17 @@ class LLMPrediction(BaseModel):
     class Config:
         json_encoders = {datetime: lambda v: v.isoformat()}
         protected_namespaces = ()
+
+
+def rebuild_models():
+    """Rebuild models to resolve forward references after all models are loaded"""
+    try:
+        # Import here to avoid circular imports during module loading
+        from models.validation_models import ValidationResult
+        
+        # Rebuild the model to resolve forward references
+        ImageMetadata.model_rebuild()
+        
+    except ImportError:
+        # ValidationResult not available yet, skip rebuild
+        pass

@@ -3,7 +3,9 @@ import json
 import logging
 import os
 import shutil
-from datetime import datetime
+import tempfile
+import time
+from datetime import datetime, timedelta
 from io import BytesIO
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
@@ -17,6 +19,7 @@ from models.annotation_models import (
     ImageValidationInfo,
     LLMPrediction,
 )
+from models.validation_models import TemporaryFileInfo
 from utils.validation import (
     ImageValidationResult,
     InputSanitizer,
@@ -43,19 +46,25 @@ class DuplicateImageError(FileStorageError):
 class FileStorageManager:
     """Enhanced file storage manager with comprehensive validation and error handling"""
 
-    def __init__(self, base_data_dir: str = "data"):
+    def __init__(self, base_data_dir: str = "data", temp_dir: Optional[str] = None):
         self.base_dir = Path(base_data_dir)
         self.images_dir = self.base_dir / "images"
         self.annotations_dir = self.base_dir / "annotations"
         self.metadata_dir = self.base_dir / "metadata"
         self.predictions_dir = self.base_dir / "predictions"
-
+        
+        # Set up temporary directory for upload processing
+        self.temp_dir = Path(temp_dir) if temp_dir else Path(tempfile.gettempdir()) / "locofy_uploads"
+        
         # Create directories if they don't exist
         self._create_directories()
 
         # Track known checksums for duplicate detection
         self._checksum_cache: Dict[str, str] = {}
         self._load_checksum_cache()
+        
+        # Track temporary files for cleanup
+        self._temp_files: Dict[str, TemporaryFileInfo] = {}
 
     def _create_directories(self):
         """Create necessary directories for file storage"""
@@ -64,6 +73,7 @@ class FileStorageManager:
             self.annotations_dir,
             self.metadata_dir,
             self.predictions_dir,
+            self.temp_dir,
         ]:
             try:
                 directory.mkdir(parents=True, exist_ok=True)
@@ -557,3 +567,249 @@ class FileStorageManager:
         except Exception as e:
             logger.error(f"Error calculating storage stats: {e}")
             return {"error": str(e)}
+
+    def save_temporary_file(self, file_content: bytes, filename: str, content_type: str) -> TemporaryFileInfo:
+        """
+        Save file to temporary location for validation processing
+        
+        Args:
+            file_content: Raw file bytes
+            filename: Original filename
+            content_type: MIME content type
+            
+        Returns:
+            TemporaryFileInfo: Information about the temporary file
+            
+        Raises:
+            FileStorageError: If temporary save fails
+        """
+        try:
+            # Generate unique temporary filename
+            temp_id = str(uuid4())
+            file_ext = Path(filename).suffix.lower() or '.tmp'
+            temp_filename = f"{temp_id}{file_ext}"
+            temp_path = self.temp_dir / temp_filename
+            
+            # Write file content to temporary location
+            with open(temp_path, 'wb') as f:
+                f.write(file_content)
+            
+            # Create temporary file info
+            temp_info = TemporaryFileInfo(
+                temp_path=str(temp_path),
+                original_filename=filename,
+                file_size=len(file_content),
+                content_type=content_type,
+                expires_at=datetime.utcnow() + timedelta(hours=1)  # Expire in 1 hour
+            )
+            
+            # Track for cleanup
+            self._temp_files[temp_id] = temp_info
+            
+            logger.info(f"Saved temporary file: {temp_path} (ID: {temp_id})")
+            return temp_info
+            
+        except Exception as e:
+            logger.error(f"Failed to save temporary file: {e}")
+            raise FileStorageError(f"Cannot save temporary file: {e}")
+    
+    def move_temp_to_permanent(self, temp_info: TemporaryFileInfo, target_image_id: str) -> str:
+        """
+        Move temporary file to permanent storage
+        
+        Args:
+            temp_info: Information about the temporary file
+            target_image_id: ID for the permanent image
+            
+        Returns:
+            str: Path to the permanent file
+            
+        Raises:
+            FileStorageError: If move operation fails
+        """
+        try:
+            temp_path = Path(temp_info.temp_path)
+            
+            if not temp_path.exists():
+                raise FileStorageError(f"Temporary file not found: {temp_path}")
+            
+            # Determine file extension
+            file_ext = Path(temp_info.original_filename).suffix.lower()
+            if not file_ext:
+                # Try to determine from content
+                try:
+                    with Image.open(temp_path) as img:
+                        format_to_ext = {
+                            "JPEG": ".jpg",
+                            "PNG": ".png", 
+                            "GIF": ".gif",
+                            "BMP": ".bmp",
+                        }
+                        file_ext = format_to_ext.get(img.format, ".jpg")
+                except:
+                    file_ext = ".jpg"  # default
+            
+            # Create permanent storage path
+            storage_filename = f"{target_image_id}{file_ext}"
+            permanent_path = self.images_dir / storage_filename
+            
+            # Move file from temp to permanent location
+            shutil.move(str(temp_path), str(permanent_path))
+            
+            # Remove from temp tracking
+            temp_id = temp_path.stem.split('_')[0] if '_' in temp_path.stem else temp_path.stem
+            if temp_id in self._temp_files:
+                del self._temp_files[temp_id]
+            
+            logger.info(f"Moved temporary file to permanent storage: {permanent_path}")
+            return str(permanent_path)
+            
+        except Exception as e:
+            logger.error(f"Failed to move temporary file to permanent storage: {e}")
+            raise FileStorageError(f"Cannot move temporary file: {e}")
+    
+    def cleanup_temporary_file(self, temp_info: TemporaryFileInfo):
+        """
+        Clean up a specific temporary file
+        
+        Args:
+            temp_info: Information about the temporary file to clean up
+        """
+        try:
+            temp_path = Path(temp_info.temp_path)
+            
+            if temp_path.exists():
+                os.unlink(temp_path)
+                logger.debug(f"Cleaned up temporary file: {temp_path}")
+            
+            # Remove from tracking
+            temp_id = temp_path.stem.split('_')[0] if '_' in temp_path.stem else temp_path.stem
+            if temp_id in self._temp_files:
+                del self._temp_files[temp_id]
+                
+        except Exception as e:
+            logger.warning(f"Failed to cleanup temporary file {temp_info.temp_path}: {e}")
+    
+    def cleanup_expired_temp_files(self):
+        """Clean up expired temporary files"""
+        current_time = datetime.utcnow()
+        expired_files = []
+        
+        for temp_id, temp_info in self._temp_files.items():
+            if temp_info.expires_at and current_time > temp_info.expires_at:
+                expired_files.append(temp_id)
+        
+        for temp_id in expired_files:
+            temp_info = self._temp_files[temp_id]
+            self.cleanup_temporary_file(temp_info)
+        
+        if expired_files:
+            logger.info(f"Cleaned up {len(expired_files)} expired temporary files")
+    
+    def save_validated_image(
+        self, 
+        temp_info: TemporaryFileInfo, 
+        validation_result: "ValidationResult"
+    ) -> ImageMetadata:
+        """
+        Save a validated image from temporary storage to permanent storage
+        
+        Args:
+            temp_info: Temporary file information
+            validation_result: LLM validation result
+            
+        Returns:
+            ImageMetadata: Complete metadata with validation info
+            
+        Raises:
+            FileStorageError: If saving fails
+        """
+        try:
+            # Generate unique image ID
+            image_id = str(uuid4())
+            
+            # Move temporary file to permanent storage
+            permanent_path = self.move_temp_to_permanent(temp_info, image_id)
+            
+            # Extract image metadata using PIL
+            try:
+                with Image.open(permanent_path) as img:
+                    width, height = img.size
+                    format_name = img.format or "UNKNOWN"
+            except Exception as e:
+                # Clean up on PIL failure
+                try:
+                    os.unlink(permanent_path)
+                except:
+                    pass
+                raise FileStorageError(f"Invalid image file - PIL processing failed: {e}")
+            
+            # Calculate checksum for duplicate detection
+            with open(permanent_path, 'rb') as f:
+                file_content = f.read()
+            checksum = hashlib.md5(file_content).hexdigest()
+            
+            # Create validation info
+            validation_info = ImageValidationInfo(
+                checksum=checksum,
+                original_filename=temp_info.original_filename,
+                sanitized_filename=Path(permanent_path).name,
+                file_size_bytes=temp_info.file_size,
+            )
+            
+            # Create metadata with validation result
+            metadata = ImageMetadata(
+                id=image_id,
+                filename=Path(permanent_path).name,
+                file_path=permanent_path,
+                file_size=temp_info.file_size,
+                width=width,
+                height=height,
+                format=format_name,
+                validation_info=validation_info,
+                processing_status="completed",
+                llm_validation_result=validation_result
+            )
+            
+            # Save metadata
+            self.save_image_metadata(metadata)
+            
+            # Update checksum cache
+            self._checksum_cache[checksum] = image_id
+            
+            logger.info(
+                f"Successfully saved validated image {image_id} "
+                f"({width}x{height}, {temp_info.file_size} bytes, "
+                f"validation: {validation_result.valid})"
+            )
+            
+            return metadata
+            
+        except Exception as e:
+            logger.error(f"Failed to save validated image: {e}")
+            # Attempt cleanup
+            try:
+                self.cleanup_temporary_file(temp_info)
+            except:
+                pass
+            raise FileStorageError(f"Cannot save validated image: {e}")
+    
+    def get_temp_files_stats(self) -> Dict:
+        """Get statistics about temporary files"""
+        current_time = datetime.utcnow()
+        
+        stats = {
+            "total_temp_files": len(self._temp_files),
+            "expired_temp_files": 0,
+            "total_temp_size_mb": 0
+        }
+        
+        for temp_info in self._temp_files.values():
+            if temp_info.expires_at and current_time > temp_info.expires_at:
+                stats["expired_temp_files"] += 1
+            
+            stats["total_temp_size_mb"] += temp_info.file_size / (1024 * 1024)
+        
+        stats["total_temp_size_mb"] = round(stats["total_temp_size_mb"], 2)
+        
+        return stats

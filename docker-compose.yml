@@ -11,6 +11,14 @@ services:
     environment:
       OPENAI_API_KEY: ${OPENAI_API_KEY}
       ENVIRONMENT: development
+      # Enhanced LLM Validation Settings
+      LLM_VALIDATION_ENABLED: ${LLM_VALIDATION_ENABLED:-true}
+      LLM_VALIDATION_TIMEOUT: ${LLM_VALIDATION_TIMEOUT:-10}
+      LLM_VALIDATION_CONFIDENCE_THRESHOLD: ${LLM_VALIDATION_CONFIDENCE_THRESHOLD:-0.7}
+      LLM_VALIDATION_MAX_IMAGE_SIZE_MB: ${LLM_VALIDATION_MAX_IMAGE_SIZE_MB:-5.0}
+      LLM_VALIDATION_FALLBACK_ON_ERROR: ${LLM_VALIDATION_FALLBACK_ON_ERROR:-true}
+      LLM_VALIDATION_CACHE_RESULTS: ${LLM_VALIDATION_CACHE_RESULTS:-true}
+      # Legacy settings (for backward compatibility)
       UPLOAD_DIR: /app/data/uploads
       ANNOTATIONS_DIR: /app/data/annotations
     volumes:
@@ -21,7 +29,7 @@ services:
       - ./src:/app/src
       - ./data:/app/data
       - ./.env:/app/.env
-    command: uvicorn adapters.fastapi_adapter:app --host 0.0.0.0 --port 8000 --reload
+    command: uvicorn adapters.enhanced_fastapi_adapter:app --host 0.0.0.0 --port 8000 --reload
 
   # Streamlit Frontend
   ui-labeling-frontend:
