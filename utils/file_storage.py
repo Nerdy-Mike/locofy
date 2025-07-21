@@ -1,17 +1,47 @@
+import hashlib
 import json
+import logging
 import os
 import shutil
+from datetime import datetime
+from io import BytesIO
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 from uuid import uuid4
 
 from PIL import Image
 
-from models.annotation_models import Annotation, ImageMetadata, LLMPrediction
+from models.annotation_models import (
+    Annotation,
+    ImageMetadata,
+    ImageValidationInfo,
+    LLMPrediction,
+)
+from utils.validation import (
+    ImageValidationResult,
+    InputSanitizer,
+    UploadValidator,
+    ValidationResult,
+)
+
+# Configure logging
+logger = logging.getLogger(__name__)
+
+
+class FileStorageError(Exception):
+    """Custom exception for file storage operations"""
+
+    pass
+
+
+class DuplicateImageError(FileStorageError):
+    """Exception raised when duplicate image is detected"""
+
+    pass
 
 
 class FileStorageManager:
-    """Manages file storage for images, annotations, and metadata"""
+    """Enhanced file storage manager with comprehensive validation and error handling"""
 
     def __init__(self, base_data_dir: str = "data"):
         self.base_dir = Path(base_data_dir)
@@ -23,6 +53,10 @@ class FileStorageManager:
         # Create directories if they don't exist
         self._create_directories()
 
+        # Track known checksums for duplicate detection
+        self._checksum_cache: Dict[str, str] = {}
+        self._load_checksum_cache()
+
     def _create_directories(self):
         """Create necessary directories for file storage"""
         for directory in [
@@ -31,188 +65,495 @@ class FileStorageManager:
             self.metadata_dir,
             self.predictions_dir,
         ]:
-            directory.mkdir(parents=True, exist_ok=True)
+            try:
+                directory.mkdir(parents=True, exist_ok=True)
+                logger.info(f"Created/verified directory: {directory}")
+            except Exception as e:
+                logger.error(f"Failed to create directory {directory}: {e}")
+                raise FileStorageError(f"Cannot create storage directory: {directory}")
 
-    def save_image(self, image_file, filename: str) -> ImageMetadata:
-        """Save uploaded image and return metadata"""
-        # Generate unique image ID
-        image_id = str(uuid4())
+    def _load_checksum_cache(self):
+        """Load existing image checksums for duplicate detection"""
+        try:
+            for metadata_file in self.metadata_dir.glob("*.json"):
+                try:
+                    with open(metadata_file, "r") as f:
+                        data = json.load(f)
 
-        # Get file extension
-        file_ext = Path(filename).suffix.lower()
-        if not file_ext:
-            file_ext = ".jpg"  # default extension
+                    if "validation_info" in data and data["validation_info"]:
+                        checksum = data["validation_info"]["checksum"]
+                        image_id = data["id"]
+                        self._checksum_cache[checksum] = image_id
 
-        # Create storage filename
-        storage_filename = f"{image_id}{file_ext}"
-        storage_path = self.images_dir / storage_filename
+                except Exception as e:
+                    logger.warning(f"Could not load checksum from {metadata_file}: {e}")
 
-        # Save the image file
-        if hasattr(image_file, "save"):
-            # Streamlit UploadedFile object
-            with open(storage_path, "wb") as f:
-                f.write(image_file.getbuffer())
-        else:
-            # File-like object
-            shutil.copyfileobj(image_file, open(storage_path, "wb"))
+        except Exception as e:
+            logger.warning(f"Could not load checksum cache: {e}")
 
-        # Get image information using PIL
-        with Image.open(storage_path) as img:
-            width, height = img.size
-            format_name = img.format
+    def save_image(
+        self, file_content: bytes, filename: str, original_file=None
+    ) -> ImageMetadata:
+        """
+        Save uploaded image with comprehensive validation
 
-        # Create metadata
-        metadata = ImageMetadata(
-            id=image_id,
-            filename=filename,
-            file_path=str(storage_path),
-            file_size=storage_path.stat().st_size,
-            width=width,
-            height=height,
-            format=format_name or "UNKNOWN",
-        )
+        Args:
+            file_content: Raw file bytes content
+            filename: Original filename
+            original_file: Optional original file object for additional metadata
 
-        # Save metadata
-        self.save_image_metadata(metadata)
+        Returns:
+            ImageMetadata: Complete metadata with validation info
 
-        return metadata
+        Raises:
+            FileStorageError: If saving fails
+            DuplicateImageError: If image already exists
+        """
+        try:
+            # We now receive file_content directly, no need to read from file object
+            if not file_content:
+                raise FileStorageError("File content is empty")
+
+            # Get content type from original file if available
+            content_type = (
+                getattr(original_file, "content_type", None)
+                or "application/octet-stream"
+            )
+
+            # Comprehensive validation
+            validation_result = UploadValidator.validate_upload_file(
+                file_content, filename, content_type
+            )
+
+            if not validation_result.valid:
+                error_details = "; ".join(
+                    [f"{err.field}: {err.message}" for err in validation_result.errors]
+                )
+                raise FileStorageError(f"Validation failed: {error_details}")
+
+            # Calculate checksum for duplicate detection
+            checksum = hashlib.md5(file_content).hexdigest()
+
+            # Check for duplicates
+            if checksum in self._checksum_cache:
+                existing_id = self._checksum_cache[checksum]
+                raise DuplicateImageError(
+                    f"Image already exists with ID: {existing_id}"
+                )
+
+            # Generate unique image ID
+            image_id = str(uuid4())
+
+            # Sanitize filename
+            sanitized_filename = UploadValidator.sanitize_filename(filename)
+
+            # Determine file extension
+            file_ext = Path(filename).suffix.lower()
+            if not file_ext:
+                # Try to determine from PIL
+                try:
+                    temp_image = Image.open(BytesIO(file_content))
+                    format_to_ext = {
+                        "JPEG": ".jpg",
+                        "PNG": ".png",
+                        "GIF": ".gif",
+                        "BMP": ".bmp",
+                    }
+                    file_ext = format_to_ext.get(temp_image.format, ".jpg")
+                except:
+                    file_ext = ".jpg"  # default
+
+            # Create storage filename
+            storage_filename = f"{image_id}{file_ext}"
+            storage_path = self.images_dir / storage_filename
+
+            # Save the image file
+            try:
+                with open(storage_path, "wb") as f:
+                    f.write(file_content)
+                logger.info(f"Saved image file: {storage_path}")
+            except Exception as e:
+                raise FileStorageError(f"Failed to save image file: {e}")
+
+            # Extract image metadata using PIL
+            try:
+                with Image.open(storage_path) as img:
+                    width, height = img.size
+                    format_name = img.format or "UNKNOWN"
+            except Exception as e:
+                # Clean up the saved file if PIL fails
+                try:
+                    os.unlink(storage_path)
+                except:
+                    pass
+                raise FileStorageError(
+                    f"Invalid image file - PIL processing failed: {e}"
+                )
+
+            # Create validation info
+            validation_info = ImageValidationInfo(
+                checksum=checksum,
+                original_filename=filename,
+                sanitized_filename=sanitized_filename,
+                file_size_bytes=len(file_content),
+            )
+
+            # Create metadata
+            metadata = ImageMetadata(
+                id=image_id,
+                filename=sanitized_filename,
+                file_path=str(storage_path),
+                file_size=len(file_content),
+                width=width,
+                height=height,
+                format=format_name,
+                validation_info=validation_info,
+                processing_status="completed",
+            )
+
+            # Save metadata
+            self.save_image_metadata(metadata)
+
+            # Update checksum cache
+            self._checksum_cache[checksum] = image_id
+
+            logger.info(
+                f"Successfully saved image {image_id} ({width}x{height}, {len(file_content)} bytes)"
+            )
+            return metadata
+
+        except (FileStorageError, DuplicateImageError):
+            # Re-raise our custom exceptions
+            raise
+        except Exception as e:
+            logger.error(f"Unexpected error saving image: {e}")
+            raise FileStorageError(f"Unexpected error during image save: {e}")
 
     def save_image_metadata(self, metadata: ImageMetadata):
-        """Save image metadata to JSON file"""
-        metadata_path = self.metadata_dir / f"{metadata.id}.json"
-        with open(metadata_path, "w") as f:
-            json.dump(metadata.dict(), f, indent=2)
+        """Save image metadata to JSON file with error handling"""
+        try:
+            metadata_path = self.metadata_dir / f"{metadata.id}.json"
+
+            # Convert to dict and handle datetime serialization
+            metadata_dict = metadata.dict()
+
+            # Ensure all datetime objects are properly serialized
+            def serialize_datetime(obj):
+                if isinstance(obj, datetime):
+                    return obj.isoformat()
+                elif isinstance(obj, dict):
+                    return {k: serialize_datetime(v) for k, v in obj.items()}
+                elif isinstance(obj, list):
+                    return [serialize_datetime(item) for item in obj]
+                return obj
+
+            metadata_dict = serialize_datetime(metadata_dict)
+
+            with open(metadata_path, "w") as f:
+                json.dump(metadata_dict, f, indent=2, ensure_ascii=False)
+
+            logger.debug(f"Saved metadata: {metadata_path}")
+
+        except Exception as e:
+            logger.error(f"Failed to save metadata for {metadata.id}: {e}")
+            raise FileStorageError(f"Cannot save image metadata: {e}")
 
     def get_image_metadata(self, image_id: str) -> Optional[ImageMetadata]:
-        """Load image metadata from JSON file"""
-        metadata_path = self.metadata_dir / f"{image_id}.json"
-        if not metadata_path.exists():
+        """Load image metadata from JSON file with error handling"""
+        try:
+            # Validate image_id format
+            if not image_id or not isinstance(image_id, str):
+                return None
+
+            metadata_path = self.metadata_dir / f"{image_id}.json"
+            if not metadata_path.exists():
+                logger.warning(f"Metadata file not found: {metadata_path}")
+                return None
+
+            with open(metadata_path, "r") as f:
+                data = json.load(f)
+
+            # Convert datetime strings back to datetime objects
+            if "upload_time" in data and isinstance(data["upload_time"], str):
+                data["upload_time"] = datetime.fromisoformat(
+                    data["upload_time"].replace("Z", "+00:00")
+                )
+
+            if "validation_info" in data and data["validation_info"]:
+                if "validation_timestamp" in data["validation_info"]:
+                    data["validation_info"]["validation_timestamp"] = (
+                        datetime.fromisoformat(
+                            data["validation_info"]["validation_timestamp"].replace(
+                                "Z", "+00:00"
+                            )
+                        )
+                    )
+
+            return ImageMetadata(**data)
+
+        except Exception as e:
+            logger.error(f"Failed to load metadata for {image_id}: {e}")
             return None
 
-        with open(metadata_path, "r") as f:
-            data = json.load(f)
-
-        return ImageMetadata(**data)
-
     def get_image_path(self, image_id: str) -> Optional[Path]:
-        """Get the file path for an image"""
-        metadata = self.get_image_metadata(image_id)
-        if metadata:
-            return Path(metadata.file_path)
-        return None
+        """Get the file path for an image with validation"""
+        try:
+            metadata = self.get_image_metadata(image_id)
+            if metadata:
+                image_path = Path(metadata.file_path)
+                if image_path.exists():
+                    return image_path
+                else:
+                    logger.error(f"Image file missing: {image_path}")
+                    return None
+            return None
+        except Exception as e:
+            logger.error(f"Error getting image path for {image_id}: {e}")
+            return None
 
     def list_images(self) -> List[ImageMetadata]:
-        """List all available images"""
+        """List all available images with error handling"""
         images = []
-        for metadata_file in self.metadata_dir.glob("*.json"):
-            try:
-                with open(metadata_file, "r") as f:
-                    data = json.load(f)
-                images.append(ImageMetadata(**data))
-            except Exception as e:
-                print(f"Error loading metadata {metadata_file}: {e}")
+
+        try:
+            for metadata_file in self.metadata_dir.glob("*.json"):
+                try:
+                    metadata = self.get_image_metadata(metadata_file.stem)
+                    if metadata:
+                        images.append(metadata)
+                except Exception as e:
+                    logger.warning(f"Error loading metadata {metadata_file}: {e}")
+
+        except Exception as e:
+            logger.error(f"Error listing images: {e}")
 
         return sorted(images, key=lambda x: x.upload_time, reverse=True)
 
-    def save_annotations(self, image_id: str, annotations: List[Annotation]):
-        """Save annotations for an image"""
-        annotations_path = self.annotations_dir / f"{image_id}.json"
-        annotations_data = [ann.dict() for ann in annotations]
-
-        with open(annotations_path, "w") as f:
-            json.dump(annotations_data, f, indent=2)
-
-        # Update annotation count in metadata
-        metadata = self.get_image_metadata(image_id)
-        if metadata:
-            metadata.annotation_count = len(annotations)
-            self.save_image_metadata(metadata)
-
-    def get_annotations(self, image_id: str) -> List[Annotation]:
-        """Load annotations for an image"""
-        annotations_path = self.annotations_dir / f"{image_id}.json"
-        if not annotations_path.exists():
-            return []
-
-        with open(annotations_path, "r") as f:
-            data = json.load(f)
-
-        return [Annotation(**ann_data) for ann_data in data]
-
-    def save_llm_predictions(self, prediction: LLMPrediction):
-        """Save LLM predictions for an image"""
-        predictions_path = self.predictions_dir / f"{prediction.image_id}.json"
-
-        with open(predictions_path, "w") as f:
-            json.dump(prediction.dict(), f, indent=2)
-
-        # Update metadata to indicate AI predictions exist
-        metadata = self.get_image_metadata(prediction.image_id)
-        if metadata:
-            metadata.has_ai_predictions = True
-            self.save_image_metadata(metadata)
-
-    def get_llm_predictions(self, image_id: str) -> Optional[LLMPrediction]:
-        """Load LLM predictions for an image"""
-        predictions_path = self.predictions_dir / f"{image_id}.json"
-        if not predictions_path.exists():
-            return None
-
-        with open(predictions_path, "r") as f:
-            data = json.load(f)
-
-        return LLMPrediction(**data)
-
     def delete_image(self, image_id: str) -> bool:
-        """Delete an image and all associated data"""
+        """
+        Delete an image and all associated data
+
+        Args:
+            image_id: ID of image to delete
+
+        Returns:
+            bool: True if deletion successful, False otherwise
+        """
         try:
+            metadata = self.get_image_metadata(image_id)
+            if not metadata:
+                logger.warning(f"Cannot delete - image metadata not found: {image_id}")
+                return False
+
+            success = True
+
             # Delete image file
-            image_path = self.get_image_path(image_id)
-            if image_path and image_path.exists():
-                image_path.unlink()
+            try:
+                image_path = Path(metadata.file_path)
+                if image_path.exists():
+                    os.unlink(image_path)
+                    logger.info(f"Deleted image file: {image_path}")
+            except Exception as e:
+                logger.error(f"Failed to delete image file: {e}")
+                success = False
 
-            # Delete metadata
-            metadata_path = self.metadata_dir / f"{image_id}.json"
-            if metadata_path.exists():
-                metadata_path.unlink()
+            # Delete metadata file
+            try:
+                metadata_path = self.metadata_dir / f"{image_id}.json"
+                if metadata_path.exists():
+                    os.unlink(metadata_path)
+                    logger.info(f"Deleted metadata file: {metadata_path}")
+            except Exception as e:
+                logger.error(f"Failed to delete metadata file: {e}")
+                success = False
 
-            # Delete annotations
-            annotations_path = self.annotations_dir / f"{image_id}.json"
-            if annotations_path.exists():
-                annotations_path.unlink()
+            # Delete annotations if they exist
+            try:
+                annotations_path = self.annotations_dir / f"{image_id}.json"
+                if annotations_path.exists():
+                    os.unlink(annotations_path)
+                    logger.info(f"Deleted annotations file: {annotations_path}")
+            except Exception as e:
+                logger.warning(f"Could not delete annotations file: {e}")
 
-            # Delete predictions
-            predictions_path = self.predictions_dir / f"{image_id}.json"
-            if predictions_path.exists():
-                predictions_path.unlink()
+            # Delete predictions if they exist
+            try:
+                predictions_path = self.predictions_dir / f"{image_id}.json"
+                if predictions_path.exists():
+                    os.unlink(predictions_path)
+                    logger.info(f"Deleted predictions file: {predictions_path}")
+            except Exception as e:
+                logger.warning(f"Could not delete predictions file: {e}")
 
-            return True
+            # Remove from checksum cache
+            if (
+                metadata.validation_info
+                and metadata.validation_info.checksum in self._checksum_cache
+            ):
+                del self._checksum_cache[metadata.validation_info.checksum]
+
+            return success
+
         except Exception as e:
-            print(f"Error deleting image {image_id}: {e}")
+            logger.error(f"Error deleting image {image_id}: {e}")
             return False
 
+    def save_annotations(self, image_id: str, annotations: List[Annotation]):
+        """Save annotations for an image with validation"""
+        try:
+            # Validate image exists
+            if not self.get_image_metadata(image_id):
+                raise FileStorageError(
+                    f"Cannot save annotations - image not found: {image_id}"
+                )
+
+            annotations_path = self.annotations_dir / f"{image_id}.json"
+            annotations_data = [ann.dict() for ann in annotations]
+
+            # Serialize datetime objects
+            def serialize_datetime(obj):
+                if isinstance(obj, datetime):
+                    return obj.isoformat()
+                elif isinstance(obj, dict):
+                    return {k: serialize_datetime(v) for k, v in obj.items()}
+                elif isinstance(obj, list):
+                    return [serialize_datetime(item) for item in obj]
+                return obj
+
+            annotations_data = serialize_datetime(annotations_data)
+
+            with open(annotations_path, "w") as f:
+                json.dump(annotations_data, f, indent=2, ensure_ascii=False)
+
+            # Update annotation count in metadata
+            metadata = self.get_image_metadata(image_id)
+            if metadata:
+                metadata.annotation_count = len(annotations)
+                self.save_image_metadata(metadata)
+
+            logger.info(f"Saved {len(annotations)} annotations for image {image_id}")
+
+        except Exception as e:
+            logger.error(f"Failed to save annotations for {image_id}: {e}")
+            raise FileStorageError(f"Cannot save annotations: {e}")
+
+    def get_annotations(self, image_id: str) -> List[Annotation]:
+        """Load annotations for an image with error handling"""
+        try:
+            annotations_path = self.annotations_dir / f"{image_id}.json"
+
+            if not annotations_path.exists():
+                return []
+
+            with open(annotations_path, "r") as f:
+                data = json.load(f)
+
+            annotations = []
+            for ann_data in data:
+                try:
+                    # Convert datetime strings back to datetime objects
+                    if "created_at" in ann_data and isinstance(
+                        ann_data["created_at"], str
+                    ):
+                        ann_data["created_at"] = datetime.fromisoformat(
+                            ann_data["created_at"].replace("Z", "+00:00")
+                        )
+                    if "updated_at" in ann_data and isinstance(
+                        ann_data["updated_at"], str
+                    ):
+                        ann_data["updated_at"] = datetime.fromisoformat(
+                            ann_data["updated_at"].replace("Z", "+00:00")
+                        )
+
+                    annotation = Annotation(**ann_data)
+                    annotations.append(annotation)
+                except Exception as e:
+                    logger.warning(f"Skipping invalid annotation data: {e}")
+
+            return annotations
+
+        except Exception as e:
+            logger.error(f"Failed to load annotations for {image_id}: {e}")
+            return []
+
+    def save_llm_predictions(self, predictions: LLMPrediction):
+        """Save LLM predictions with error handling"""
+        try:
+            predictions_path = self.predictions_dir / f"{predictions.image_id}.json"
+
+            # Convert to dict and serialize datetime
+            predictions_data = predictions.dict()
+
+            def serialize_datetime(obj):
+                if isinstance(obj, datetime):
+                    return obj.isoformat()
+                elif isinstance(obj, dict):
+                    return {k: serialize_datetime(v) for k, v in obj.items()}
+                elif isinstance(obj, list):
+                    return [serialize_datetime(item) for item in obj]
+                return obj
+
+            predictions_data = serialize_datetime(predictions_data)
+
+            with open(predictions_path, "w") as f:
+                json.dump(predictions_data, f, indent=2, ensure_ascii=False)
+
+            # Update metadata to indicate predictions exist
+            metadata = self.get_image_metadata(predictions.image_id)
+            if metadata:
+                metadata.has_ai_predictions = True
+                self.save_image_metadata(metadata)
+
+            logger.info(f"Saved LLM predictions for image {predictions.image_id}")
+
+        except Exception as e:
+            logger.error(f"Failed to save LLM predictions: {e}")
+            raise FileStorageError(f"Cannot save LLM predictions: {e}")
+
     def get_storage_stats(self) -> Dict:
-        """Get storage statistics"""
-        total_images = len(list(self.metadata_dir.glob("*.json")))
-        total_annotations = len(list(self.annotations_dir.glob("*.json")))
-        total_predictions = len(list(self.predictions_dir.glob("*.json")))
+        """Get comprehensive storage statistics"""
+        try:
+            stats = {
+                "total_images": 0,
+                "total_annotations": 0,
+                "total_predictions": 0,
+                "total_storage_mb": 0,
+                "formats": {},
+                "avg_resolution": {"width": 0, "height": 0},
+            }
 
-        # Calculate total storage size
-        total_size = 0
-        for directory in [
-            self.images_dir,
-            self.annotations_dir,
-            self.metadata_dir,
-            self.predictions_dir,
-        ]:
-            for file_path in directory.rglob("*"):
-                if file_path.is_file():
-                    total_size += file_path.stat().st_size
+            images = self.list_images()
+            stats["total_images"] = len(images)
 
-        return {
-            "total_images": total_images,
-            "total_annotations": total_annotations,
-            "total_predictions": total_predictions,
-            "total_storage_bytes": total_size,
-            "total_storage_mb": round(total_size / (1024 * 1024), 2),
-        }
+            total_width = total_height = 0
+            total_bytes = 0
+
+            for metadata in images:
+                # Count formats
+                format_name = metadata.format
+                stats["formats"][format_name] = stats["formats"].get(format_name, 0) + 1
+
+                # Sum dimensions for average
+                total_width += metadata.width
+                total_height += metadata.height
+                total_bytes += metadata.file_size
+
+                # Count annotations
+                stats["total_annotations"] += metadata.annotation_count
+
+                # Count predictions
+                if metadata.has_ai_predictions:
+                    stats["total_predictions"] += 1
+
+            # Calculate averages
+            if len(images) > 0:
+                stats["avg_resolution"]["width"] = total_width // len(images)
+                stats["avg_resolution"]["height"] = total_height // len(images)
+
+            stats["total_storage_mb"] = round(total_bytes / (1024 * 1024), 2)
+
+            return stats
+
+        except Exception as e:
+            logger.error(f"Error calculating storage stats: {e}")
+            return {"error": str(e)}

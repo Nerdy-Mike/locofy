@@ -111,8 +111,25 @@ class AnnotationUpdate(BaseModel):
     annotator: Optional[str] = Field(None, description="Updated annotator identifier")
 
 
+class ImageValidationInfo(BaseModel):
+    """Validation information for uploaded images"""
+
+    checksum: str = Field(..., description="MD5 checksum of image file")
+    original_filename: str = Field(..., description="Original filename from upload")
+    sanitized_filename: str = Field(
+        ..., description="Sanitized filename used for storage"
+    )
+    validation_timestamp: datetime = Field(
+        default_factory=datetime.utcnow, description="When validation was performed"
+    )
+    file_size_bytes: int = Field(..., gt=0, description="Actual file size in bytes")
+
+    class Config:
+        json_encoders = {datetime: lambda v: v.isoformat()}
+
+
 class ImageMetadata(BaseModel):
-    """Metadata for uploaded images"""
+    """Enhanced metadata for uploaded images with comprehensive validation"""
 
     id: str = Field(default_factory=lambda: str(uuid4()), description="Unique image ID")
     filename: str = Field(..., description="Original filename")
@@ -128,6 +145,82 @@ class ImageMetadata(BaseModel):
     has_ai_predictions: bool = Field(
         default=False, description="Whether AI predictions exist"
     )
+
+    # Enhanced validation and security fields
+    validation_info: Optional[ImageValidationInfo] = Field(
+        None, description="Detailed validation information"
+    )
+    processing_status: str = Field(
+        default="completed", description="Processing status of the image"
+    )
+    error_message: Optional[str] = Field(
+        None, description="Error message if processing failed"
+    )
+
+    @validator("width", "height")
+    def validate_dimensions(cls, v):
+        if v <= 0:
+            raise ValueError("Image dimensions must be positive")
+        if v > 16384:  # Reasonable maximum
+            raise ValueError("Image dimensions too large (max 16384 pixels)")
+        return v
+
+    @validator("file_size")
+    def validate_file_size(cls, v):
+        max_size = 10 * 1024 * 1024  # 10MB
+        if v > max_size:
+            raise ValueError(
+                f"File size too large (max {max_size / (1024*1024):.1f}MB)"
+            )
+        return v
+
+    @validator("format")
+    def validate_format(cls, v):
+        allowed_formats = ["JPEG", "PNG", "GIF", "BMP", "WEBP"]
+        if v.upper() not in allowed_formats:
+            raise ValueError(f"Unsupported image format: {v}")
+        return v.upper()
+
+    @validator("processing_status")
+    def validate_processing_status(cls, v):
+        allowed_statuses = ["pending", "processing", "completed", "failed"]
+        if v not in allowed_statuses:
+            raise ValueError(f"Invalid processing status: {v}")
+        return v
+
+    @property
+    def aspect_ratio(self) -> float:
+        """Calculate aspect ratio (width/height)"""
+        return self.width / self.height if self.height > 0 else 0
+
+    @property
+    def resolution_mp(self) -> float:
+        """Calculate resolution in megapixels"""
+        return (self.width * self.height) / 1_000_000
+
+    @property
+    def is_portrait(self) -> bool:
+        """Check if image is in portrait orientation"""
+        return self.height > self.width
+
+    @property
+    def is_landscape(self) -> bool:
+        """Check if image is in landscape orientation"""
+        return self.width > self.height
+
+    def get_size_info(self) -> dict:
+        """Get comprehensive size information"""
+        return {
+            "dimensions": f"{self.width}x{self.height}",
+            "aspect_ratio": round(self.aspect_ratio, 2),
+            "resolution_mp": round(self.resolution_mp, 2),
+            "file_size_mb": round(self.file_size / (1024 * 1024), 2),
+            "orientation": (
+                "portrait"
+                if self.is_portrait
+                else "landscape" if self.is_landscape else "square"
+            ),
+        }
 
     class Config:
         json_encoders = {datetime: lambda v: v.isoformat()}
