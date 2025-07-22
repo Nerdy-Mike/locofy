@@ -1,6 +1,6 @@
 from datetime import datetime
 from enum import Enum
-from typing import Optional
+from typing import List, Optional
 
 from pydantic import BaseModel, Field
 
@@ -12,6 +12,67 @@ class ValidationStatus(str, Enum):
     INVALID = "invalid"
     PENDING = "pending"
     ERROR = "error"
+
+
+class ProcessingStatus(str, Enum):
+    """Status of MCP processing"""
+
+    PENDING = "pending"
+    PROCESSING = "processing"
+    COMPLETED = "completed"
+    FAILED = "failed"
+    CANCELLED = "cancelled"
+
+
+class DetectedElement(BaseModel):
+    """UI element detected by MCP service"""
+
+    id: str = Field(..., description="Unique element ID")
+    tag: str = Field(..., description="UI element tag (button, input, etc.)")
+    bounding_box: dict = Field(..., description="Bounding box coordinates")
+    confidence: float = Field(..., ge=0.0, le=1.0, description="Detection confidence")
+    reasoning: Optional[str] = Field(None, description="Detection reasoning")
+    model_version: str = Field(..., description="Model version used")
+    detection_timestamp: datetime = Field(default_factory=datetime.utcnow)
+
+    class Config:
+        json_encoders = {datetime: lambda v: v.isoformat()}
+
+
+class MCPContext(BaseModel):
+    """Context for MCP prediction requests"""
+
+    previous_predictions: Optional[List[DetectedElement]] = Field(
+        None, description="Previous predictions for context"
+    )
+    image_metadata: Optional[dict] = Field(
+        None, description="Image metadata for context"
+    )
+    user_feedback: Optional[dict] = Field(None, description="User feedback for context")
+
+
+class PredictionResponse(BaseModel):
+    """Response from MCP prediction service"""
+
+    prediction_id: str = Field(..., description="Unique prediction ID")
+    image_id: str = Field(..., description="Associated image ID")
+    elements: List[DetectedElement] = Field(
+        default_factory=list, description="Detected UI elements"
+    )
+    processing_time: float = Field(..., gt=0, description="Processing time in seconds")
+    model_version: str = Field(..., description="Model version used")
+    confidence_threshold: float = Field(
+        default=0.5, description="Confidence threshold used"
+    )
+    total_elements: int = Field(
+        ..., ge=0, description="Total number of elements detected"
+    )
+    status: ProcessingStatus = Field(..., description="Processing status")
+    context_used: bool = Field(default=False, description="Whether context was used")
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+    class Config:
+        json_encoders = {datetime: lambda v: v.isoformat()}
 
 
 class ValidationResult(BaseModel):

@@ -52,17 +52,21 @@ class FileStorageManager:
         self.annotations_dir = self.base_dir / "annotations"
         self.metadata_dir = self.base_dir / "metadata"
         self.predictions_dir = self.base_dir / "predictions"
-        
+
         # Set up temporary directory for upload processing
-        self.temp_dir = Path(temp_dir) if temp_dir else Path(tempfile.gettempdir()) / "locofy_uploads"
-        
+        self.temp_dir = (
+            Path(temp_dir)
+            if temp_dir
+            else Path(tempfile.gettempdir()) / "locofy_uploads"
+        )
+
         # Create directories if they don't exist
         self._create_directories()
 
         # Track known checksums for duplicate detection
         self._checksum_cache: Dict[str, str] = {}
         self._load_checksum_cache()
-        
+
         # Track temporary files for cleanup
         self._temp_files: Dict[str, TemporaryFileInfo] = {}
 
@@ -499,58 +503,67 @@ class FileStorageManager:
     def save_annotation_batch(self, annotations: List[Annotation]) -> bool:
         """
         Save multiple annotations atomically for a single image
-        
+
         Args:
             annotations: List of annotations to save (must all be for same image)
-            
+
         Returns:
             bool: True if all annotations saved successfully
-            
+
         Raises:
             FileStorageError: If batch save fails
         """
         if not annotations:
             return True
-            
+
         # Verify all annotations are for the same image
         image_id = annotations[0].image_id
         if not all(ann.image_id == image_id for ann in annotations):
-            raise FileStorageError("All annotations in batch must be for the same image")
-        
+            raise FileStorageError(
+                "All annotations in batch must be for the same image"
+            )
+
         try:
             # Load existing annotations
             existing_annotations = self.get_annotations(image_id)
-            
+
             # Combine existing and new annotations
             all_annotations = existing_annotations + annotations
-            
+
             # Save all annotations atomically
             self.save_annotations(image_id, all_annotations)
-            
-            logger.info(f"Successfully saved batch of {len(annotations)} annotations for image {image_id}")
+
+            logger.info(
+                f"Successfully saved batch of {len(annotations)} annotations for image {image_id}"
+            )
             return True
-            
+
         except Exception as e:
             logger.error(f"Failed to save annotation batch for {image_id}: {e}")
             raise FileStorageError(f"Cannot save annotation batch: {e}")
 
-    def update_annotation_status(self, image_id: str, annotation_id: str, 
-                               status: str, reviewed_by: Optional[str] = None) -> bool:
+    def update_annotation_status(
+        self,
+        image_id: str,
+        annotation_id: str,
+        status: str,
+        reviewed_by: Optional[str] = None,
+    ) -> bool:
         """
         Update the status of a specific annotation
-        
+
         Args:
             image_id: ID of the image
             annotation_id: ID of the annotation to update
             status: New status value
             reviewed_by: Optional reviewer identifier
-            
+
         Returns:
             bool: True if update successful
         """
         try:
             annotations = self.get_annotations(image_id)
-            
+
             # Find and update the specific annotation
             updated = False
             for annotation in annotations:
@@ -561,44 +574,48 @@ class FileStorageManager:
                         annotation.reviewed_at = datetime.utcnow()
                     updated = True
                     break
-            
+
             if not updated:
-                logger.warning(f"Annotation {annotation_id} not found for image {image_id}")
+                logger.warning(
+                    f"Annotation {annotation_id} not found for image {image_id}"
+                )
                 return False
-            
+
             # Save updated annotations
             self.save_annotations(image_id, annotations)
-            
+
             logger.info(f"Updated annotation {annotation_id} status to {status}")
             return True
-            
+
         except Exception as e:
             logger.error(f"Failed to update annotation status: {e}")
             return False
 
-    def save_annotation_file_structure(self, image_id: str, annotations: List[Annotation]):
+    def save_annotation_file_structure(
+        self, image_id: str, annotations: List[Annotation]
+    ):
         """
         Save annotations in the enhanced file structure format
-        
+
         Args:
             image_id: ID of the image
             annotations: List of annotations to save
         """
         try:
             annotations_path = self.annotations_dir / f"{image_id}.json"
-            
+
             # Create the enhanced file structure as documented in DATAFLOW.md
             file_structure = {
                 "image_id": image_id,
                 "last_updated": datetime.utcnow().isoformat(),
                 "annotation_count": len(annotations),
-                "annotations": []
+                "annotations": [],
             }
-            
+
             # Convert annotations to dict format
             for annotation in annotations:
                 ann_dict = annotation.dict()
-                
+
                 # Serialize datetime objects
                 def serialize_datetime(obj):
                     if isinstance(obj, datetime):
@@ -608,14 +625,14 @@ class FileStorageManager:
                     elif isinstance(obj, list):
                         return [serialize_datetime(item) for item in obj]
                     return obj
-                
+
                 ann_dict = serialize_datetime(ann_dict)
                 file_structure["annotations"].append(ann_dict)
-            
+
             # Write to file
             with open(annotations_path, "w") as f:
                 json.dump(file_structure, f, indent=2, ensure_ascii=False)
-            
+
             # Update image metadata annotation count and quality metrics
             metadata = self.get_image_metadata(image_id)
             if metadata:
@@ -624,52 +641,59 @@ class FileStorageManager:
                 metadata.has_conflicts = any(
                     ann.status == "conflicted" for ann in annotations
                 )
-                
+
                 # Calculate simple quality score based on conflicts and annotation density
                 if len(annotations) > 0:
-                    conflict_ratio = sum(1 for ann in annotations if ann.status == "conflicted") / len(annotations)
+                    conflict_ratio = sum(
+                        1 for ann in annotations if ann.status == "conflicted"
+                    ) / len(annotations)
                     # Simple quality score: fewer conflicts = higher quality
                     metadata.quality_score = max(0.0, 1.0 - conflict_ratio)
                 else:
                     metadata.quality_score = None
-                    
+
                 self.save_image_metadata(metadata)
-            
-            logger.info(f"Saved {len(annotations)} annotations with enhanced structure for image {image_id}")
-            
+
+            logger.info(
+                f"Saved {len(annotations)} annotations with enhanced structure for image {image_id}"
+            )
+
         except Exception as e:
-            logger.error(f"Failed to save annotation file structure for {image_id}: {e}")
+            logger.error(
+                f"Failed to save annotation file structure for {image_id}: {e}"
+            )
             raise FileStorageError(f"Cannot save annotation file structure: {e}")
 
     def get_conflicted_annotations(self) -> List[Annotation]:
         """
         Get all annotations that have conflicts across all images
-        
+
         Returns:
             List[Annotation]: All conflicted annotations
         """
         conflicted_annotations = []
-        
+
         try:
             # Iterate through all annotation files
             for annotations_file in self.annotations_dir.glob("*.json"):
                 try:
                     image_id = annotations_file.stem
                     annotations = self.get_annotations(image_id)
-                    
+
                     # Filter for conflicted annotations
                     conflicted = [
-                        ann for ann in annotations 
-                        if ann.status == "conflicted"
+                        ann for ann in annotations if ann.status == "conflicted"
                     ]
                     conflicted_annotations.extend(conflicted)
-                    
+
                 except Exception as e:
-                    logger.warning(f"Error processing annotations file {annotations_file}: {e}")
-            
+                    logger.warning(
+                        f"Error processing annotations file {annotations_file}: {e}"
+                    )
+
             logger.info(f"Found {len(conflicted_annotations)} conflicted annotations")
             return conflicted_annotations
-            
+
         except Exception as e:
             logger.error(f"Failed to get conflicted annotations: {e}")
             return []
@@ -677,7 +701,7 @@ class FileStorageManager:
     def get_annotation_statistics(self) -> Dict:
         """
         Get comprehensive statistics about annotations
-        
+
         Returns:
             Dict: Statistics about annotations across all images
         """
@@ -688,54 +712,58 @@ class FileStorageManager:
                 "annotations_by_tag": {},
                 "images_with_annotations": 0,
                 "images_with_conflicts": 0,
-                "average_annotations_per_image": 0
+                "average_annotations_per_image": 0,
             }
-            
+
             images_with_annotations = 0
             images_with_conflicts = 0
-            
+
             # Process all annotation files
             for annotations_file in self.annotations_dir.glob("*.json"):
                 try:
                     image_id = annotations_file.stem
                     annotations = self.get_annotations(image_id)
-                    
+
                     if annotations:
                         images_with_annotations += 1
                         stats["total_annotations"] += len(annotations)
-                        
+
                         # Check for conflicts
-                        has_conflicts = any(ann.status == "conflicted" for ann in annotations)
+                        has_conflicts = any(
+                            ann.status == "conflicted" for ann in annotations
+                        )
                         if has_conflicts:
                             images_with_conflicts += 1
-                        
+
                         # Count by status
                         for annotation in annotations:
                             status = annotation.status
                             stats["annotations_by_status"][status] = (
                                 stats["annotations_by_status"].get(status, 0) + 1
                             )
-                            
+
                             # Count by tag
                             tag = annotation.tag
                             stats["annotations_by_tag"][tag] = (
                                 stats["annotations_by_tag"].get(tag, 0) + 1
                             )
-                    
+
                 except Exception as e:
-                    logger.warning(f"Error processing annotation stats for {annotations_file}: {e}")
-            
+                    logger.warning(
+                        f"Error processing annotation stats for {annotations_file}: {e}"
+                    )
+
             stats["images_with_annotations"] = images_with_annotations
             stats["images_with_conflicts"] = images_with_conflicts
-            
+
             # Calculate average
             if images_with_annotations > 0:
                 stats["average_annotations_per_image"] = round(
                     stats["total_annotations"] / images_with_annotations, 2
                 )
-            
+
             return stats
-            
+
         except Exception as e:
             logger.error(f"Failed to calculate annotation statistics: {e}")
             return {"error": str(e)}
@@ -773,6 +801,41 @@ class FileStorageManager:
         except Exception as e:
             logger.error(f"Failed to save LLM predictions: {e}")
             raise FileStorageError(f"Cannot save LLM predictions: {e}")
+
+    def get_llm_predictions(self, image_id: str) -> Optional[LLMPrediction]:
+        """Retrieve LLM predictions for an image"""
+        try:
+            predictions_path = self.predictions_dir / f"{image_id}.json"
+
+            if not predictions_path.exists():
+                logger.debug(f"No predictions found for image {image_id}")
+                return None
+
+            with open(predictions_path, "r") as f:
+                predictions_data = json.load(f)
+
+            # Parse datetime strings back to datetime objects
+            def parse_datetime(obj):
+                if isinstance(obj, dict):
+                    return {k: parse_datetime(v) for k, v in obj.items()}
+                elif isinstance(obj, list):
+                    return [parse_datetime(item) for item in obj]
+                elif isinstance(obj, str):
+                    # Try to parse as ISO datetime
+                    try:
+                        return datetime.fromisoformat(obj.replace("Z", "+00:00"))
+                    except ValueError:
+                        return obj
+                return obj
+
+            predictions_data = parse_datetime(predictions_data)
+
+            # Convert back to LLMPrediction object
+            return LLMPrediction(**predictions_data)
+
+        except Exception as e:
+            logger.error(f"Failed to load LLM predictions for image {image_id}: {e}")
+            return None
 
     def get_storage_stats(self) -> Dict:
         """Get comprehensive storage statistics"""
@@ -822,71 +885,75 @@ class FileStorageManager:
             logger.error(f"Error calculating storage stats: {e}")
             return {"error": str(e)}
 
-    def save_temporary_file(self, file_content: bytes, filename: str, content_type: str) -> TemporaryFileInfo:
+    def save_temporary_file(
+        self, file_content: bytes, filename: str, content_type: str
+    ) -> TemporaryFileInfo:
         """
         Save file to temporary location for validation processing
-        
+
         Args:
             file_content: Raw file bytes
             filename: Original filename
             content_type: MIME content type
-            
+
         Returns:
             TemporaryFileInfo: Information about the temporary file
-            
+
         Raises:
             FileStorageError: If temporary save fails
         """
         try:
             # Generate unique temporary filename
             temp_id = str(uuid4())
-            file_ext = Path(filename).suffix.lower() or '.tmp'
+            file_ext = Path(filename).suffix.lower() or ".tmp"
             temp_filename = f"{temp_id}{file_ext}"
             temp_path = self.temp_dir / temp_filename
-            
+
             # Write file content to temporary location
-            with open(temp_path, 'wb') as f:
+            with open(temp_path, "wb") as f:
                 f.write(file_content)
-            
+
             # Create temporary file info
             temp_info = TemporaryFileInfo(
                 temp_path=str(temp_path),
                 original_filename=filename,
                 file_size=len(file_content),
                 content_type=content_type,
-                expires_at=datetime.utcnow() + timedelta(hours=1)  # Expire in 1 hour
+                expires_at=datetime.utcnow() + timedelta(hours=1),  # Expire in 1 hour
             )
-            
+
             # Track for cleanup
             self._temp_files[temp_id] = temp_info
-            
+
             logger.info(f"Saved temporary file: {temp_path} (ID: {temp_id})")
             return temp_info
-            
+
         except Exception as e:
             logger.error(f"Failed to save temporary file: {e}")
             raise FileStorageError(f"Cannot save temporary file: {e}")
-    
-    def move_temp_to_permanent(self, temp_info: TemporaryFileInfo, target_image_id: str) -> str:
+
+    def move_temp_to_permanent(
+        self, temp_info: TemporaryFileInfo, target_image_id: str
+    ) -> str:
         """
         Move temporary file to permanent storage
-        
+
         Args:
             temp_info: Information about the temporary file
             target_image_id: ID for the permanent image
-            
+
         Returns:
             str: Path to the permanent file
-            
+
         Raises:
             FileStorageError: If move operation fails
         """
         try:
             temp_path = Path(temp_info.temp_path)
-            
+
             if not temp_path.exists():
                 raise FileStorageError(f"Temporary file not found: {temp_path}")
-            
+
             # Determine file extension
             file_ext = Path(temp_info.original_filename).suffix.lower()
             if not file_ext:
@@ -895,96 +962,104 @@ class FileStorageManager:
                     with Image.open(temp_path) as img:
                         format_to_ext = {
                             "JPEG": ".jpg",
-                            "PNG": ".png", 
+                            "PNG": ".png",
                             "GIF": ".gif",
                             "BMP": ".bmp",
                         }
                         file_ext = format_to_ext.get(img.format, ".jpg")
                 except:
                     file_ext = ".jpg"  # default
-            
+
             # Create permanent storage path
             storage_filename = f"{target_image_id}{file_ext}"
             permanent_path = self.images_dir / storage_filename
-            
+
             # Move file from temp to permanent location
             shutil.move(str(temp_path), str(permanent_path))
-            
+
             # Remove from temp tracking
-            temp_id = temp_path.stem.split('_')[0] if '_' in temp_path.stem else temp_path.stem
+            temp_id = (
+                temp_path.stem.split("_")[0]
+                if "_" in temp_path.stem
+                else temp_path.stem
+            )
             if temp_id in self._temp_files:
                 del self._temp_files[temp_id]
-            
+
             logger.info(f"Moved temporary file to permanent storage: {permanent_path}")
             return str(permanent_path)
-            
+
         except Exception as e:
             logger.error(f"Failed to move temporary file to permanent storage: {e}")
             raise FileStorageError(f"Cannot move temporary file: {e}")
-    
+
     def cleanup_temporary_file(self, temp_info: TemporaryFileInfo):
         """
         Clean up a specific temporary file
-        
+
         Args:
             temp_info: Information about the temporary file to clean up
         """
         try:
             temp_path = Path(temp_info.temp_path)
-            
+
             if temp_path.exists():
                 os.unlink(temp_path)
                 logger.debug(f"Cleaned up temporary file: {temp_path}")
-            
+
             # Remove from tracking
-            temp_id = temp_path.stem.split('_')[0] if '_' in temp_path.stem else temp_path.stem
+            temp_id = (
+                temp_path.stem.split("_")[0]
+                if "_" in temp_path.stem
+                else temp_path.stem
+            )
             if temp_id in self._temp_files:
                 del self._temp_files[temp_id]
-                
+
         except Exception as e:
-            logger.warning(f"Failed to cleanup temporary file {temp_info.temp_path}: {e}")
-    
+            logger.warning(
+                f"Failed to cleanup temporary file {temp_info.temp_path}: {e}"
+            )
+
     def cleanup_expired_temp_files(self):
         """Clean up expired temporary files"""
         current_time = datetime.utcnow()
         expired_files = []
-        
+
         for temp_id, temp_info in self._temp_files.items():
             if temp_info.expires_at and current_time > temp_info.expires_at:
                 expired_files.append(temp_id)
-        
+
         for temp_id in expired_files:
             temp_info = self._temp_files[temp_id]
             self.cleanup_temporary_file(temp_info)
-        
+
         if expired_files:
             logger.info(f"Cleaned up {len(expired_files)} expired temporary files")
-    
+
     def save_validated_image(
-        self, 
-        temp_info: TemporaryFileInfo, 
-        validation_result: "ValidationResult"
+        self, temp_info: TemporaryFileInfo, validation_result: "ValidationResult"
     ) -> ImageMetadata:
         """
         Save a validated image from temporary storage to permanent storage
-        
+
         Args:
             temp_info: Temporary file information
             validation_result: LLM validation result
-            
+
         Returns:
             ImageMetadata: Complete metadata with validation info
-            
+
         Raises:
             FileStorageError: If saving fails
         """
         try:
             # Generate unique image ID
             image_id = str(uuid4())
-            
+
             # Move temporary file to permanent storage
             permanent_path = self.move_temp_to_permanent(temp_info, image_id)
-            
+
             # Extract image metadata using PIL
             try:
                 with Image.open(permanent_path) as img:
@@ -996,13 +1071,15 @@ class FileStorageManager:
                     os.unlink(permanent_path)
                 except:
                     pass
-                raise FileStorageError(f"Invalid image file - PIL processing failed: {e}")
-            
+                raise FileStorageError(
+                    f"Invalid image file - PIL processing failed: {e}"
+                )
+
             # Calculate checksum for duplicate detection
-            with open(permanent_path, 'rb') as f:
+            with open(permanent_path, "rb") as f:
                 file_content = f.read()
             checksum = hashlib.md5(file_content).hexdigest()
-            
+
             # Create validation info
             validation_info = ImageValidationInfo(
                 checksum=checksum,
@@ -1010,7 +1087,7 @@ class FileStorageManager:
                 sanitized_filename=Path(permanent_path).name,
                 file_size_bytes=temp_info.file_size,
             )
-            
+
             # Create metadata with validation result
             metadata = ImageMetadata(
                 id=image_id,
@@ -1022,23 +1099,23 @@ class FileStorageManager:
                 format=format_name,
                 validation_info=validation_info,
                 processing_status="completed",
-                llm_validation_result=validation_result
+                llm_validation_result=validation_result,
             )
-            
+
             # Save metadata
             self.save_image_metadata(metadata)
-            
+
             # Update checksum cache
             self._checksum_cache[checksum] = image_id
-            
+
             logger.info(
                 f"Successfully saved validated image {image_id} "
                 f"({width}x{height}, {temp_info.file_size} bytes, "
                 f"validation: {validation_result.valid})"
             )
-            
+
             return metadata
-            
+
         except Exception as e:
             logger.error(f"Failed to save validated image: {e}")
             # Attempt cleanup
@@ -1047,23 +1124,23 @@ class FileStorageManager:
             except:
                 pass
             raise FileStorageError(f"Cannot save validated image: {e}")
-    
+
     def get_temp_files_stats(self) -> Dict:
         """Get statistics about temporary files"""
         current_time = datetime.utcnow()
-        
+
         stats = {
             "total_temp_files": len(self._temp_files),
             "expired_temp_files": 0,
-            "total_temp_size_mb": 0
+            "total_temp_size_mb": 0,
         }
-        
+
         for temp_info in self._temp_files.values():
             if temp_info.expires_at and current_time > temp_info.expires_at:
                 stats["expired_temp_files"] += 1
-            
+
             stats["total_temp_size_mb"] += temp_info.file_size / (1024 * 1024)
-        
+
         stats["total_temp_size_mb"] = round(stats["total_temp_size_mb"], 2)
-        
+
         return stats

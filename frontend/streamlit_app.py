@@ -41,6 +41,7 @@ pages = {
     "🏠 Image Management": "image_management",
     "📝 Annotation Tool": "annotation_tool",
     "🤖 AI Predictions": "ai_predictions",
+    "🎨 Enhanced Annotation Viewer": "enhanced_annotation_viewer",
     "📊 Analytics & Export": "analytics",
 }
 
@@ -668,9 +669,295 @@ elif page == "📝 Annotation Tool":
 
 elif page == "🤖 AI Predictions":
     st.header("🤖 AI Predictions")
-    st.info(
-        "🚧 **Phase 1.1 Implementation**\n\nAI prediction features are available when OpenAI API key is configured."
+    st.markdown(
+        "Generate automatic UI element predictions using AI models with optional context awareness."
     )
+
+    # Image selection
+    st.subheader("🖼️ Select Image for Prediction")
+
+    try:
+        images = api_client.list_images()
+
+        if not images:
+            st.warning(
+                "📥 **No images available**\n\nPlease upload some images first in the Image Management section."
+            )
+        else:
+            # Image selection dropdown
+            image_options = {
+                f"{img['filename']} ({img['id'][:8]}...)": img["id"] for img in images
+            }
+            selected_display = st.selectbox(
+                "Choose an image for AI prediction:",
+                options=list(image_options.keys()),
+                help="Select an image to generate UI element predictions",
+            )
+
+            if selected_display:
+                selected_image_id = image_options[selected_display]
+                selected_image = next(
+                    img for img in images if img["id"] == selected_image_id
+                )
+
+                # Display image info
+                col1, col2, col3, col4 = st.columns(4)
+                with col1:
+                    st.metric(
+                        "📏 Dimensions",
+                        f"{selected_image['width']}×{selected_image['height']}",
+                    )
+                with col2:
+                    st.metric(
+                        "📝 Annotations", selected_image.get("annotation_count", 0)
+                    )
+                with col3:
+                    st.metric("📄 Format", selected_image["format"])
+                with col4:
+                    ai_status = (
+                        "✅" if selected_image.get("has_ai_predictions") else "❌"
+                    )
+                    st.metric("🤖 AI Predictions", ai_status)
+
+                st.markdown("---")
+
+                # Prediction method selection
+                st.subheader("🧠 Prediction Methods")
+
+                prediction_col1, prediction_col2 = st.columns(2)
+
+                with prediction_col1:
+                    st.markdown("### 📡 Direct API Prediction")
+                    st.info(
+                        "**Traditional Method**\n\n"
+                        "Uses OpenAI GPT-4V directly without context awareness. "
+                        "Fast and reliable, but doesn't consider existing annotations."
+                    )
+
+                    if st.button(
+                        "🚀 Generate Direct Predictions",
+                        type="primary",
+                        use_container_width=True,
+                    ):
+                        with st.spinner(
+                            "🤖 Generating predictions using direct API..."
+                        ):
+                            try:
+                                predictions = api_client.generate_predictions(
+                                    selected_image_id
+                                )
+                                st.success(
+                                    f"✅ Generated {len(predictions.get('predictions', []))} predictions!"
+                                )
+
+                                # Display prediction results
+                                if predictions.get("predictions"):
+                                    st.subheader("📊 Prediction Results")
+
+                                    # Summary metrics
+                                    result_col1, result_col2, result_col3 = st.columns(
+                                        3
+                                    )
+                                    with result_col1:
+                                        st.metric(
+                                            "Elements Found",
+                                            len(predictions["predictions"]),
+                                        )
+                                    with result_col2:
+                                        st.metric(
+                                            "Processing Time",
+                                            f"{predictions.get('processing_time', 0):.2f}s",
+                                        )
+                                    with result_col3:
+                                        avg_conf = sum(
+                                            p.get("confidence", 0)
+                                            for p in predictions["predictions"]
+                                        ) / len(predictions["predictions"])
+                                        st.metric("Avg Confidence", f"{avg_conf:.2f}")
+
+                                    # Detailed results
+                                    with st.expander("View Detailed Results"):
+                                        for i, pred in enumerate(
+                                            predictions["predictions"]
+                                        ):
+                                            bbox = pred["bounding_box"]
+                                            st.write(
+                                                f"**{i+1}.** {pred['tag']} at ({bbox['x']}, {bbox['y']}) "
+                                                f"{bbox['width']}×{bbox['height']} (confidence: {pred.get('confidence', 0):.2f})"
+                                            )
+
+                            except Exception as e:
+                                st.error(f"❌ Prediction failed: {str(e)}")
+
+                with prediction_col2:
+                    st.markdown("### 🧠 MCP Context-Aware Prediction")
+
+                    # Check if there are existing annotations for context
+                    existing_count = selected_image.get("annotation_count", 0)
+                    if existing_count > 0:
+                        st.success(
+                            f"**Enhanced Method** ✨\n\n"
+                            f"Uses Model Context Protocol with awareness of {existing_count} existing annotations. "
+                            f"Provides better accuracy by avoiding overlaps and finding missed elements."
+                        )
+                    else:
+                        st.info(
+                            "**Enhanced Method**\n\n"
+                            "Uses Model Context Protocol for structured predictions. "
+                            "Will provide better quality than direct API even without existing annotations."
+                        )
+
+                    if st.button(
+                        "🧠 Generate MCP Predictions",
+                        type="secondary",
+                        use_container_width=True,
+                    ):
+                        with st.spinner(
+                            "🤖 Generating context-aware predictions using MCP..."
+                        ):
+                            try:
+                                mcp_predictions = api_client.generate_mcp_predictions(
+                                    selected_image_id
+                                )
+
+                                if mcp_predictions.get("status") == "completed":
+                                    st.success(
+                                        f"✅ Generated {mcp_predictions.get('total_elements', 0)} context-aware predictions!"
+                                    )
+
+                                    # Display MCP prediction results
+                                    st.subheader("📊 MCP Prediction Results")
+
+                                    # Summary metrics
+                                    (
+                                        result_col1,
+                                        result_col2,
+                                        result_col3,
+                                        result_col4,
+                                    ) = st.columns(4)
+                                    with result_col1:
+                                        st.metric(
+                                            "Elements Found",
+                                            mcp_predictions.get("total_elements", 0),
+                                        )
+                                    with result_col2:
+                                        st.metric(
+                                            "Processing Time",
+                                            f"{mcp_predictions.get('processing_time', 0):.2f}s",
+                                        )
+                                    with result_col3:
+                                        st.metric(
+                                            "Model Version",
+                                            mcp_predictions.get(
+                                                "model_version", "Unknown"
+                                            ),
+                                        )
+                                    with result_col4:
+                                        context_used = (
+                                            "✅"
+                                            if mcp_predictions.get(
+                                                "context_used", False
+                                            )
+                                            else "❌"
+                                        )
+                                        st.metric("Context Used", context_used)
+
+                                    # Detailed results
+                                    if mcp_predictions.get("elements"):
+                                        with st.expander("View Detailed MCP Results"):
+                                            for i, elem in enumerate(
+                                                mcp_predictions["elements"]
+                                            ):
+                                                bbox = elem["bounding_box"]
+                                                reasoning = elem.get(
+                                                    "reasoning", "No reasoning provided"
+                                                )
+                                                st.write(
+                                                    f"**{i+1}.** {elem['tag']} at ({bbox['x']}, {bbox['y']}) "
+                                                    f"{bbox['width']}×{bbox['height']} (confidence: {elem.get('confidence', 0):.2f})"
+                                                )
+                                                st.caption(f"💭 {reasoning}")
+
+                                    # Show context information if used
+                                    if mcp_predictions.get("context_used", False):
+                                        st.info(
+                                            f"🎯 This prediction considered {existing_count} existing annotations for better accuracy."
+                                        )
+
+                                else:
+                                    st.warning(
+                                        f"⚠️ MCP prediction completed with status: {mcp_predictions.get('status', 'unknown')}"
+                                    )
+
+                            except Exception as e:
+                                st.error(f"❌ MCP prediction failed: {str(e)}")
+                                st.info(
+                                    "💡 MCP might not be available. Try the Direct API prediction instead."
+                                )
+
+                st.markdown("---")
+
+                # Load and display existing predictions if available
+                try:
+                    existing_predictions = api_client.get_predictions(selected_image_id)
+                    existing_annotations = api_client.get_annotations(selected_image_id)
+
+                    if existing_predictions or existing_annotations:
+                        st.subheader("📋 Current Data Summary")
+
+                        summary_col1, summary_col2 = st.columns(2)
+
+                        with summary_col1:
+                            if existing_annotations:
+                                st.markdown("**Manual Annotations:**")
+                                tag_counts = {}
+                                for ann in existing_annotations:
+                                    tag = ann.get("tag", "unknown")
+                                    tag_counts[tag] = tag_counts.get(tag, 0) + 1
+
+                                for tag, count in tag_counts.items():
+                                    st.write(f"• {tag.title()}: {count}")
+                            else:
+                                st.write("No manual annotations yet")
+
+                        with summary_col2:
+                            if existing_predictions:
+                                st.markdown("**AI Predictions:**")
+                                pred_counts = {}
+                                for pred in existing_predictions.get("predictions", []):
+                                    tag = pred.get("tag", "unknown")
+                                    pred_counts[tag] = pred_counts.get(tag, 0) + 1
+
+                                for tag, count in pred_counts.items():
+                                    st.write(f"• {tag.title()}: {count}")
+
+                                st.caption(
+                                    f"Model: {existing_predictions.get('llm_model', 'Unknown')}"
+                                )
+                            else:
+                                st.write("No AI predictions yet")
+
+                except Exception as e:
+                    st.warning(f"Could not load existing data: {str(e)}")
+
+    except Exception as e:
+        st.error(f"❌ Error loading images: {str(e)}")
+        with st.expander("🔧 Debug Information"):
+            st.code(f"Error details: {str(e)}")
+
+elif page == "🎨 Enhanced Annotation Viewer":
+    try:
+        from pages.enhanced_annotation_viewer import show_enhanced_annotation_viewer
+
+        show_enhanced_annotation_viewer()
+    except ImportError as e:
+        st.error(f"❌ Could not load Enhanced Annotation Viewer: {str(e)}")
+        st.info("Please ensure all required dependencies are installed.")
+        with st.expander("🔧 Debug Information"):
+            st.code(f"Import error details: {str(e)}")
+            st.code(
+                "Current working directory and Python path info will help debug this issue."
+            )
 
 elif page == "📊 Analytics & Export":
     st.header("📊 Analytics & Export")

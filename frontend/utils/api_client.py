@@ -78,12 +78,14 @@ class UILabelingAPIClient:
         response.raise_for_status()
         return response.json()
 
-    def save_annotation_batch(self, image_id: str, created_by: str, annotations: List[Dict]) -> Dict:
+    def save_annotation_batch(
+        self, image_id: str, created_by: str, annotations: List[Dict]
+    ) -> Dict:
         """Save a batch of annotations for an image"""
         batch_data = {
             "image_id": image_id,
             "created_by": created_by,
-            "annotations": annotations
+            "annotations": annotations,
         }
         response = self.session.post(
             f"{self.base_url}/annotations/batch",
@@ -112,10 +114,19 @@ class UILabelingAPIClient:
     # LLM Prediction Methods
 
     def generate_predictions(self, image_id: str) -> Dict:
-        """Generate LLM predictions for an image"""
+        """Generate LLM predictions for an image using direct API"""
         response = self.session.post(
             f"{self.base_url}/images/{image_id}/predict",
             timeout=60,  # Longer timeout for LLM processing
+        )
+        response.raise_for_status()
+        return response.json()
+
+    def generate_mcp_predictions(self, image_id: str) -> Dict:
+        """Generate LLM predictions for an image using MCP with context awareness"""
+        response = self.session.post(
+            f"{self.base_url}/images/{image_id}/predict-mcp",
+            timeout=90,  # Longer timeout for MCP processing
         )
         response.raise_for_status()
         return response.json()

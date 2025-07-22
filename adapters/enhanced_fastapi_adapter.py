@@ -5,7 +5,9 @@ This shows how to integrate the new enhanced upload flow (DATAFLOW.md section 1.
 into your existing FastAPI application.
 """
 
+import asyncio
 import logging
+import subprocess
 import time
 from datetime import datetime
 from typing import List, Optional
@@ -22,9 +24,12 @@ from models.annotation_models import (
     ImageMetadata,
     ValidationResult,
 )
-from models.validation_models import UIValidationRequest
+from models.validation_models import UIValidationRequest, _rebuild_annotation_models
 from services.annotation_validation_service import AnnotationValidationService
 from services.enhanced_upload_service import EnhancedUploadService, get_upload_service
+
+# Add MCP integration to existing imports
+from services.mcp_service import MCPSessionManager, MCPUIDetectionService
 from services.quality_metrics_service import QualityMetricsService
 from utils.config import AppConfig, get_config, validate_environment
 from utils.file_storage import FileStorageManager
@@ -36,14 +41,89 @@ logger = logging.getLogger(__name__)
 # Initialize FastAPI app
 app = FastAPI(
     title="Locofy UI Component Labeling System",
-    description="Enhanced image upload with LLM validation",
+    description="Enhanced image upload with LLM validation + MCP integration",
     version="1.2.0",
 )
+
+# Global MCP service instance
+_mcp_service: Optional[MCPUIDetectionService] = None
+_mcp_session_manager: Optional[MCPSessionManager] = None
+
+
+async def check_mcp_dependencies() -> bool:
+    """Check if MCP dependencies are available"""
+    try:
+        # Check if npx is available
+        result = subprocess.run(
+            ["which", "npx"], capture_output=True, text=True, timeout=5
+        )
+        if result.returncode != 0:
+            logger.warning("npx not found - MCP features will be disabled")
+            return False
+
+        # Check if MCP server package can be found
+        result = subprocess.run(
+            ["npx", "-y", "@anthropic-ai/mcp-server-openai", "--help"],
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+        if result.returncode != 0:
+            logger.warning(
+                "MCP server package not available - MCP features will be disabled"
+            )
+            return False
+
+        logger.info("✅ MCP dependencies are available")
+        return True
+
+    except (
+        subprocess.TimeoutExpired,
+        subprocess.SubprocessError,
+        FileNotFoundError,
+    ) as e:
+        logger.warning(f"Failed to check MCP dependencies: {e}")
+        return False
+
+
+async def initialize_mcp_service() -> Optional[MCPUIDetectionService]:
+    """Initialize MCP service if enabled and dependencies are available"""
+    config = get_config()
+
+    if not config.mcp_enabled:
+        logger.info("🔕 MCP service disabled by configuration")
+        return None
+
+    if not await check_mcp_dependencies():
+        logger.warning("❌ MCP dependencies not available - falling back to direct API")
+        return None
+
+    try:
+        mcp_service = MCPUIDetectionService()
+        await mcp_service.initialize()
+        logger.info("✅ MCP service initialized successfully")
+        return mcp_service
+    except Exception as e:
+        logger.error(f"❌ Failed to initialize MCP service: {e}")
+        logger.info("📡 Will fall back to direct OpenAI API for predictions")
+        return None
+
+
+def get_mcp_service() -> Optional[MCPUIDetectionService]:
+    """Get MCP service instance (dependency injection)"""
+    return _mcp_service
+
+
+def get_mcp_session_manager() -> Optional[MCPSessionManager]:
+    """Get MCP session manager instance (dependency injection)"""
+    return _mcp_session_manager
 
 
 @app.on_event("startup")
 async def startup_event():
     """Application startup - validate environment and setup logging"""
+    global _mcp_service, _mcp_session_manager
+
     try:
         # Load and validate configuration
         config = get_config()
@@ -53,6 +133,21 @@ async def startup_event():
         # Initialize services (this will be done automatically on first request)
         upload_service = get_upload_service()
 
+        # Initialize MCP services
+        logger.info("🤖 Initializing MCP services...")
+        try:
+            _mcp_service = await initialize_mcp_service()
+            if _mcp_service:
+                _mcp_session_manager = MCPSessionManager()
+                logger.info(
+                    f"✅ MCP integration ready (timeout: {config.mcp_timeout}s)"
+                )
+            else:
+                logger.info("📡 Using direct OpenAI API (MCP disabled)")
+        except Exception as e:
+            logger.error(f"❌ MCP initialization failed: {e}")
+            logger.info("📡 Falling back to direct OpenAI API")
+
         # Start background tasks
         from services.enhanced_upload_service import UploadServiceManager
 
@@ -60,6 +155,7 @@ async def startup_event():
 
         logger.info("🚀 Enhanced upload service started successfully")
         logger.info(f"🔧 LLM validation enabled: {config.llm_validation_enabled}")
+        logger.info(f"🤖 MCP enabled: {config.mcp_enabled}")
         logger.info(f"📁 Data directory: {config.data_directory}")
 
     except Exception as e:
@@ -672,13 +768,29 @@ async def get_annotation_statistics(
 
 @app.get("/")
 async def root() -> dict:
-    """Root endpoint with API information"""
+    """Root endpoint with API information and MCP status"""
     config = get_config()
+
+    # Check MCP availability
+    mcp_available = _mcp_service is not None
+    mcp_status = "operational" if mcp_available else "disabled"
+
     return {
-        "message": "🚀 Locofy Enhanced Upload Service with LLM Validation & Annotations",
+        "message": "🚀 Locofy Enhanced Upload Service with LLM Validation & MCP Integration",
         "version": "1.2.0",
         "status": "operational",
         "llm_validation_enabled": config.llm_validation_enabled,
+        "mcp_enabled": config.mcp_enabled,
+        "mcp_status": mcp_status,
+        "features": {
+            "enhanced_upload": True,
+            "llm_validation": config.llm_validation_enabled,
+            "mcp_predictions": mcp_available,
+            "direct_api_predictions": True,
+            "annotation_management": True,
+            "conflict_detection": True,
+            "batch_operations": True,
+        },
         "endpoints": {
             "health": "/health",
             "upload": "/images/upload",
@@ -688,6 +800,9 @@ async def root() -> dict:
             "annotation_batch": "/annotations/batch",
             "annotation_conflicts": "/annotations/{image_id}/conflicts",
             "annotation_stats": "/annotations/statistics",
+            "predict_direct": "/images/{image_id}/predict",
+            "predict_mcp": "/images/{image_id}/predict-mcp",
+            "predictions": "/images/{image_id}/predictions",
             "frontend": "http://localhost:8501",
         },
         "docs": "/docs",
@@ -696,13 +811,105 @@ async def root() -> dict:
 
 @app.get("/health")
 async def health_check() -> dict:
-    """Basic health check endpoint"""
+    """Enhanced health check endpoint with MCP status"""
     config = get_config()
+
+    # Check MCP service health
+    mcp_health = "unknown"
+    mcp_details = {}
+
+    if config.mcp_enabled:
+        if _mcp_service is not None:
+            try:
+                # Basic MCP health check (you could add more sophisticated checks)
+                mcp_health = "operational"
+                mcp_details = {
+                    "status": "initialized",
+                    "session_manager": _mcp_session_manager is not None,
+                    "timeout": config.mcp_timeout,
+                    "fallback_enabled": config.mcp_fallback_to_direct_api,
+                }
+            except Exception as e:
+                mcp_health = "error"
+                mcp_details = {"error": str(e)}
+        else:
+            mcp_health = "not_initialized"
+            mcp_details = {"reason": "MCP service failed to initialize"}
+    else:
+        mcp_health = "disabled"
+        mcp_details = {"reason": "MCP disabled in configuration"}
+
     return {
         "status": "healthy",
         "version": "1.2.0",
-        "llm_validation_enabled": config.llm_validation_enabled,
-        "data_directory": config.data_directory,
+        "timestamp": datetime.now().isoformat(),
+        "services": {
+            "llm_validation": (
+                "operational" if config.llm_validation_enabled else "disabled"
+            ),
+            "mcp": mcp_health,
+            "storage": "operational",
+            "api": "operational",
+        },
+        "mcp_details": mcp_details,
+        "configuration": {
+            "llm_validation_enabled": config.llm_validation_enabled,
+            "mcp_enabled": config.mcp_enabled,
+            "data_directory": config.data_directory,
+            "mcp_timeout": config.mcp_timeout if config.mcp_enabled else None,
+            "mcp_fallback": (
+                config.mcp_fallback_to_direct_api if config.mcp_enabled else None
+            ),
+        },
+    }
+
+
+@app.get("/mcp/status")
+async def get_mcp_status() -> dict:
+    """Get detailed MCP service status"""
+    config = get_config()
+
+    if not config.mcp_enabled:
+        return {
+            "enabled": False,
+            "status": "disabled",
+            "message": "MCP is disabled in configuration",
+        }
+
+    if _mcp_service is None:
+        return {
+            "enabled": True,
+            "status": "failed",
+            "message": "MCP service failed to initialize",
+            "fallback_available": config.mcp_fallback_to_direct_api,
+        }
+
+    # Get session manager stats if available
+    session_stats = {}
+    if _mcp_session_manager:
+        session_stats = {
+            "active_sessions": len(_mcp_session_manager.active_sessions),
+            "session_manager_initialized": True,
+        }
+
+    return {
+        "enabled": True,
+        "status": "operational",
+        "message": "MCP service is running",
+        "configuration": {
+            "timeout": config.mcp_timeout,
+            "fallback_enabled": config.mcp_fallback_to_direct_api,
+            "max_context_size": config.mcp_max_context_size,
+            "health_check_interval": config.mcp_health_check_interval,
+        },
+        "session_stats": session_stats,
+        "capabilities": [
+            "context_aware_prediction",
+            "existing_annotation_awareness",
+            "fallback_to_direct_api",
+            "structured_output",
+            "enhanced_prompting",
+        ],
     }
 
 
@@ -725,6 +932,278 @@ async def http_exception_handler(request, exc: HTTPException):
             "timestamp": logger.time.time() if hasattr(logger, "time") else None,
         },
     )
+
+
+# Call rebuild to resolve forward references
+_rebuild_annotation_models()
+
+
+# === PREDICTION ENDPOINTS ===
+
+from models.annotation_models import LLMPrediction
+from models.validation_models import (
+    DetectedElement,
+    MCPContext,
+    PredictionResponse,
+    ProcessingStatus,
+)
+from services.llm_service import LLMUIDetectionService
+
+
+def get_llm_service() -> Optional[LLMUIDetectionService]:
+    """Get LLM service instance for direct API calls"""
+    config = get_config()
+    if not config.openai_api_key:
+        return None
+    try:
+        return LLMUIDetectionService(config.openai_api_key)
+    except Exception as e:
+        logger.warning(f"Failed to initialize LLM service: {e}")
+        return None
+
+
+@app.post("/images/{image_id}/predict", response_model=LLMPrediction)
+async def generate_predictions_direct_api(
+    image_id: str = Path(..., description="ID of the image"),
+    upload_service: EnhancedUploadService = Depends(get_upload_service_dependency),
+) -> LLMPrediction:
+    """
+    Generate LLM predictions using direct OpenAI API (traditional method)
+
+    This endpoint uses the direct OpenAI API without MCP context awareness.
+    It's maintained for backward compatibility and as a fallback option.
+    """
+    # Get LLM service
+    llm_service = get_llm_service()
+    if not llm_service:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail={
+                "error": "llm_service_unavailable",
+                "message": "LLM service not available. Check OPENAI_API_KEY configuration.",
+                "suggestion": "Ensure OPENAI_API_KEY is set in environment variables",
+            },
+        )
+
+    try:
+        # Verify image exists
+        image_path = upload_service.storage_manager.get_image_path(image_id)
+        if not image_path or not image_path.exists():
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail={
+                    "error": "image_not_found",
+                    "message": f"Image file not found for ID '{image_id}'",
+                    "image_id": image_id,
+                },
+            )
+
+        # Generate predictions using direct API
+        predictions = llm_service.detect_ui_components(image_id, str(image_path))
+
+        # Save predictions
+        upload_service.storage_manager.save_llm_predictions(predictions)
+
+        logger.info(
+            f"Generated {len(predictions.predictions)} predictions for image {image_id} (direct API)"
+        )
+        return predictions
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error generating predictions for image {image_id}: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={
+                "error": "prediction_error",
+                "message": "Could not generate predictions",
+                "details": str(e),
+            },
+        )
+
+
+@app.post("/images/{image_id}/predict-mcp", response_model=PredictionResponse)
+async def generate_predictions_with_mcp(
+    image_id: str = Path(..., description="ID of the image"),
+    upload_service: EnhancedUploadService = Depends(get_upload_service_dependency),
+    mcp_service: Optional[MCPUIDetectionService] = Depends(get_mcp_service),
+    mcp_session_manager: Optional[MCPSessionManager] = Depends(get_mcp_session_manager),
+) -> PredictionResponse:
+    """
+    Generate LLM predictions using MCP with context awareness
+
+    This endpoint uses the Model Context Protocol (MCP) to provide context-aware
+    predictions that consider existing annotations and improve accuracy.
+    Falls back to direct API if MCP is unavailable.
+    """
+    try:
+        # Verify image exists
+        image_metadata = upload_service.storage_manager.get_image_metadata(image_id)
+        if not image_metadata:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail={
+                    "error": "image_not_found",
+                    "message": f"Image not found for ID '{image_id}'",
+                    "image_id": image_id,
+                },
+            )
+
+        image_path = upload_service.storage_manager.get_image_path(image_id)
+        if not image_path or not image_path.exists():
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail={
+                    "error": "image_file_not_found",
+                    "message": f"Image file not found for ID '{image_id}'",
+                    "image_id": image_id,
+                },
+            )
+
+        # Try MCP prediction with context awareness
+        if mcp_service and mcp_session_manager:
+            try:
+                logger.info(f"🤖 Generating MCP predictions for image {image_id}")
+
+                # Load existing annotations for context
+                existing_annotations = upload_service.storage_manager.get_annotations(
+                    image_id
+                )
+
+                # Build MCP context
+                context = MCPContext(
+                    previous_predictions=[],  # Convert existing annotations if needed
+                    image_metadata={
+                        "width": image_metadata.width,
+                        "height": image_metadata.height,
+                        "format": image_metadata.format,
+                        "annotation_count": len(existing_annotations),
+                    },
+                )
+
+                # Read image data
+                with open(image_path, "rb") as f:
+                    image_data = f.read()
+
+                # Generate MCP predictions
+                mcp_response = await mcp_service.detect_ui_elements(
+                    image_data, image_id, context
+                )
+
+                # Mark that MCP was used
+                mcp_response.context_used = True
+
+                logger.info(
+                    f"✅ Generated {mcp_response.total_elements} MCP predictions for image {image_id}"
+                )
+                return mcp_response
+
+            except Exception as e:
+                logger.warning(f"🔄 MCP prediction failed for image {image_id}: {e}")
+                logger.info("📡 Falling back to direct OpenAI API")
+
+        # Fallback to direct API
+        logger.info(f"📡 Using direct API for image {image_id}")
+        llm_service = get_llm_service()
+        if not llm_service:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail={
+                    "error": "no_prediction_service",
+                    "message": "Neither MCP nor direct API is available",
+                    "suggestion": "Check OPENAI_API_KEY and MCP configuration",
+                },
+            )
+
+        # Generate predictions using direct API
+        llm_predictions = llm_service.detect_ui_components(image_id, str(image_path))
+
+        # Convert LLMPrediction to PredictionResponse format
+        detected_elements = []
+        for i, pred in enumerate(llm_predictions.predictions):
+            element = DetectedElement(
+                id=f"elem_{i}_{int(datetime.now().timestamp())}",
+                tag=pred.tag.value,
+                bounding_box={
+                    "x": pred.bounding_box.x,
+                    "y": pred.bounding_box.y,
+                    "width": pred.bounding_box.width,
+                    "height": pred.bounding_box.height,
+                },
+                confidence=pred.confidence or 0.8,
+                reasoning=pred.reasoning,
+                model_version=llm_predictions.llm_model,
+                detection_timestamp=datetime.now(),
+            )
+            detected_elements.append(element)
+
+        # Create fallback response
+        fallback_response = PredictionResponse(
+            prediction_id=f"pred_fallback_{image_id}_{int(datetime.now().timestamp())}",
+            image_id=image_id,
+            elements=detected_elements,
+            processing_time=llm_predictions.processing_time,
+            model_version=f"{llm_predictions.llm_model}_direct",
+            confidence_threshold=0.5,
+            total_elements=len(detected_elements),
+            status=ProcessingStatus.COMPLETED,
+            context_used=False,
+            created_at=datetime.now(),
+        )
+
+        # Save the original LLM predictions
+        upload_service.storage_manager.save_llm_predictions(llm_predictions)
+
+        logger.info(
+            f"📡 Generated {len(detected_elements)} fallback predictions for image {image_id}"
+        )
+        return fallback_response
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error generating predictions for image {image_id}: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={
+                "error": "prediction_error",
+                "message": "Could not generate predictions",
+                "details": str(e),
+            },
+        )
+
+
+@app.get("/images/{image_id}/predictions", response_model=Optional[LLMPrediction])
+async def get_predictions(
+    image_id: str = Path(..., description="ID of the image"),
+    upload_service: EnhancedUploadService = Depends(get_upload_service_dependency),
+) -> Optional[LLMPrediction]:
+    """
+    Get existing LLM predictions for an image
+
+    Returns the most recent prediction results for the specified image.
+    """
+    try:
+        # Verify image exists
+        if not upload_service.storage_manager.get_image_metadata(image_id):
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Image not found: {image_id}",
+            )
+
+        # Get predictions
+        predictions = upload_service.storage_manager.get_llm_predictions(image_id)
+        return predictions
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error retrieving predictions for image {image_id}: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve predictions",
+        )
 
 
 if __name__ == "__main__":

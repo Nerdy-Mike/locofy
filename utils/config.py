@@ -30,6 +30,19 @@ class AppConfig(BaseSettings):
     )
     llm_validation_cache_results: bool = Field(True, env="LLM_VALIDATION_CACHE_RESULTS")
 
+    # MCP (Model Context Protocol) settings
+    mcp_enabled: bool = Field(True, env="MCP_ENABLED")
+    mcp_timeout: int = Field(30, env="MCP_TIMEOUT", ge=10, le=120)
+    mcp_fallback_to_direct_api: bool = Field(True, env="MCP_FALLBACK_TO_DIRECT_API")
+    mcp_server_command: str = Field("npx", env="MCP_SERVER_COMMAND")
+    mcp_server_args: str = Field(
+        "-y,@anthropic-ai/mcp-server-openai", env="MCP_SERVER_ARGS"
+    )
+    mcp_health_check_interval: int = Field(
+        60, env="MCP_HEALTH_CHECK_INTERVAL", ge=30, le=300
+    )
+    mcp_max_context_size: int = Field(10, env="MCP_MAX_CONTEXT_SIZE", ge=1, le=50)
+
     # File storage settings
     data_directory: str = Field("data", env="DATA_DIRECTORY")
     temp_directory: Optional[str] = Field(None, env="TEMP_DIRECTORY")
@@ -172,6 +185,15 @@ LLM_VALIDATION_CONFIDENCE_THRESHOLD=0.7
 LLM_VALIDATION_MAX_IMAGE_SIZE_MB=5.0
 LLM_VALIDATION_FALLBACK_ON_ERROR=true
 LLM_VALIDATION_CACHE_RESULTS=true
+
+# MCP (Model Context Protocol) Settings
+MCP_ENABLED=true
+MCP_TIMEOUT=30
+MCP_FALLBACK_TO_DIRECT_API=true
+MCP_SERVER_COMMAND=npx
+MCP_SERVER_ARGS=-y,@anthropic-ai/mcp-server-openai
+MCP_HEALTH_CHECK_INTERVAL=60
+MCP_MAX_CONTEXT_SIZE=10
 
 # File Storage Settings
 DATA_DIRECTORY=data
