@@ -1,0 +1,62 @@
+[
+  {
+    "id": "d471aac6-8cf4-4ea1-8616-b6242285ac69",
+    "image_id": "f3d1d081-06c9-4510-b50e-906c2955f28b",
+    "bounding_box": {
+      "x": 116.0,
+      "y": 807.0,
+      "width": 211.0,
+      "height": 48.0
+    },
+    "tag": "button",
+    "confidence": null,
+    "annotator": "human_annotator",
+    "created_at": "2025-07-22T10:52:14.712540",
+    "updated_at": "2025-07-13T18:38:25.712543",
+    "status": "active",
+    "reviewed_by": null,
+    "reviewed_at": null,
+    "conflicts_with": [],
+    "reasoning": null
+  },
+  {
+    "id": "17b1fcea-86c6-41d9-8eb5-5888031b4e07",
+    "image_id": "f3d1d081-06c9-4510-b50e-906c2955f28b",
+    "bounding_box": {
+      "x": 115.0,
+      "y": 393.0,
+      "width": 180.0,
+      "height": 32.0
+    },
+    "tag": "input",
+    "confidence": null,
+    "annotator": "human_annotator",
+    "created_at": "2025-07-10T08:37:19.712549",
+    "updated_at": "2025-07-04T01:39:59.712551",
+    "status": "active",
+    "reviewed_by": null,
+    "reviewed_at": null,
+    "conflicts_with": [],
+    "reasoning": null
+  },
+  {
+    "id": "4c3b8604-c7b5-444b-b6f3-786a21387742",
+    "image_id": "f3d1d081-06c9-4510-b50e-906c2955f28b",
+    "bounding_box": {
+      "x": 216.0,
+      "y": 748.0,
+      "width": 187.0,
+      "height": 32.0
+    },
+    "tag": "input",
+    "confidence": null,
+    "annotator": "human_annotator",
+    "created_at": "2025-07-04T14:29:34.712557",
+    "updated_at": "2025-07-17T11:12:56.712559",
+    "status": "active",
+    "reviewed_by": null,
+    "reviewed_at": null,
+    "conflicts_with": [],
+    "reasoning": null
+  }
+]

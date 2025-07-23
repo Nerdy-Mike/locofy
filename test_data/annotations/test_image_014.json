@@ -1,0 +1,102 @@
+[
+  {
+    "id": "57af658e-903c-4e6d-aa4f-6076d91d20c6",
+    "image_id": "test_image_014",
+    "bounding_box": {
+      "x": 235.0,
+      "y": 557.0,
+      "width": 121.0,
+      "height": 237.0
+    },
+    "tag": "input",
+    "confidence": null,
+    "annotator": "human_annotator",
+    "created_at": "2024-01-01T10:00:00.000Z",
+    "updated_at": "2024-01-01T10:00:00.000Z",
+    "status": "active",
+    "reviewed_by": null,
+    "reviewed_at": null,
+    "conflicts_with": [],
+    "reasoning": null
+  },
+  {
+    "id": "2e0dd1c6-bd4b-42c9-adf2-71563d4c4d64",
+    "image_id": "test_image_014",
+    "bounding_box": {
+      "x": 1692.0,
+      "y": 145.0,
+      "width": 96.0,
+      "height": 156.0
+    },
+    "tag": "button",
+    "confidence": null,
+    "annotator": "human_annotator",
+    "created_at": "2024-01-01T10:00:00.000Z",
+    "updated_at": "2024-01-01T10:00:00.000Z",
+    "status": "active",
+    "reviewed_by": null,
+    "reviewed_at": null,
+    "conflicts_with": [],
+    "reasoning": null
+  },
+  {
+    "id": "c21cc379-2c30-47ca-985d-aa28f878c454",
+    "image_id": "test_image_014",
+    "bounding_box": {
+      "x": 1623.0,
+      "y": 314.0,
+      "width": 50.0,
+      "height": 104.0
+    },
+    "tag": "radio",
+    "confidence": null,
+    "annotator": "human_annotator",
+    "created_at": "2024-01-01T10:00:00.000Z",
+    "updated_at": "2024-01-01T10:00:00.000Z",
+    "status": "active",
+    "reviewed_by": null,
+    "reviewed_at": null,
+    "conflicts_with": [],
+    "reasoning": null
+  },
+  {
+    "id": "2a9d9433-26be-43aa-83f3-5b450056accc",
+    "image_id": "test_image_014",
+    "bounding_box": {
+      "x": 959.0,
+      "y": 705.0,
+      "width": 244.0,
+      "height": 83.0
+    },
+    "tag": "radio",
+    "confidence": null,
+    "annotator": "human_annotator",
+    "created_at": "2024-01-01T10:00:00.000Z",
+    "updated_at": "2024-01-01T10:00:00.000Z",
+    "status": "active",
+    "reviewed_by": null,
+    "reviewed_at": null,
+    "conflicts_with": [],
+    "reasoning": null
+  },
+  {
+    "id": "c5984fc4-5d97-4c02-8305-99e563138dff",
+    "image_id": "test_image_014",
+    "bounding_box": {
+      "x": 1024.0,
+      "y": 552.0,
+      "width": 226.0,
+      "height": 159.0
+    },
+    "tag": "dropdown",
+    "confidence": null,
+    "annotator": "human_annotator",
+    "created_at": "2024-01-01T10:00:00.000Z",
+    "updated_at": "2024-01-01T10:00:00.000Z",
+    "status": "active",
+    "reviewed_by": null,
+    "reviewed_at": null,
+    "conflicts_with": [],
+    "reasoning": null
+  }
+]

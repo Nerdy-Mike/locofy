@@ -9,20 +9,62 @@ from PIL import Image
 
 import streamlit as st
 
-# Add the frontend directory to Python path for imports
-frontend_dir = Path(__file__).parent
-sys.path.insert(0, str(frontend_dir))
-
-# Import API client
-from utils.api_client import UILabelingAPIClient
-
-# Configure Streamlit page
+# Configure Streamlit page FIRST - must be the very first Streamlit command
 st.set_page_config(
     page_title="UI Component Labeling Tool",
     page_icon="🎨",
     layout="wide",
     initial_sidebar_state="expanded",
 )
+
+# Add the frontend directory and parent directory to Python path for imports
+# This ensures imports work in both local development and Docker environments
+frontend_dir = Path(__file__).parent
+project_root = frontend_dir.parent
+sys.path.insert(0, str(frontend_dir))
+sys.path.insert(0, str(project_root))
+
+# Try multiple import paths for API client to handle different environments
+api_client = None
+import_success = ""
+import_error = None
+
+try:
+    from utils.api_client import UILabelingAPIClient
+
+    import_success = "Local import successful"
+except ImportError as e1:
+    try:
+        from frontend.utils.api_client import UILabelingAPIClient
+
+        import_success = "Frontend import successful"
+    except ImportError as e2:
+        import_error = {
+            "error1": str(e1),
+            "error2": str(e2),
+            "cwd": os.getcwd(),
+            "python_path": sys.path,
+            "frontend_dir": str(frontend_dir),
+            "project_root": str(project_root),
+        }
+
+# Handle import error after page config
+if import_error:
+    st.error("❌ Could not import UILabelingAPIClient. Please check the setup.")
+    st.error(f"Error 1: {import_error['error1']}")
+    st.error(f"Error 2: {import_error['error2']}")
+    st.error(f"Current working directory: {import_error['cwd']}")
+    st.error(f"Python path: {import_error['python_path']}")
+    st.error(f"Frontend directory: {import_error['frontend_dir']}")
+    st.error(f"Project root: {import_error['project_root']}")
+    st.stop()
+
+# Add diagnostic information in development
+if os.getenv("ENVIRONMENT") == "development":
+    st.sidebar.markdown("---")
+    st.sidebar.markdown("**🔧 Debug Info**")
+    st.sidebar.write(f"Import: {import_success}")
+    st.sidebar.write(f"CWD: {os.getcwd()}")
 
 
 # Initialize API client

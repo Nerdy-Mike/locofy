@@ -318,6 +318,238 @@ graph TD
 
 ## Technical Specifications
 
+### MCP Request/Response Flow
+
+```mermaid
+sequenceDiagram
+    participant FA as FastAPI Backend
+    participant MC as MCPClient
+    participant CB as ContextBuilder
+    participant MCP as MCP Server
+    participant OAI as OpenAI API
+    
+    FA->>MC: detect_ui_elements(image_data, context)
+    MC->>CB: build_detection_context(image_data, context)
+    CB->>CB: preprocess_image_for_llm() 
+    CB->>CB: load_existing_annotations()
+    CB->>MC: enhanced_context
+    MC->>MCP: execute_tool(ui_detection, context)
+    MCP->>OAI: chat.completions.create(enhanced_prompt)
+    OAI->>MCP: structured_response
+    MCP->>MC: parsed_results
+    MC->>MC: validate_and_scale_coordinates()
+    MC->>FA: validated_predictions
+```
+
+### Coordinate System Integration & Validation
+
+**Critical Enhancement (Production Issue Resolved):**
+
+The MCP service includes comprehensive coordinate validation to prevent out-of-bounds coordinates that caused rendering failures in production.
+
+#### Enhanced Coordinate Processing
+
+```python
+# MCP Service Coordinate Validation
+def _validate_and_scale_coordinates(
+    self, bbox_data: dict, scale_factor: float, resized_width: int, resized_height: int
+) -> dict:
+    """Validate coordinates are within bounds before scaling back to original dimensions"""
+    
+    # First validate that coordinates are within the resized image bounds
+    x, y, width, height = bbox_data["x"], bbox_data["y"], bbox_data["width"], bbox_data["height"]
+    
+    # Check bounds on resized image BEFORE scaling
+    if (x < 0 or y < 0 or 
+        x + width > resized_width or 
+        y + height > resized_height or
+        width <= 0 or height <= 0):
+        
+        logger.warning(f"MCP provided out-of-bounds coordinates: "
+                      f"({x}, {y}) {width}×{height} on {resized_width}×{resized_height} image. "
+                      f"Clamping to valid range.")
+        
+        # Clamp coordinates to valid range
+        x = max(0, min(x, resized_width - 1))
+        y = max(0, min(y, resized_height - 1))
+        width = max(1, min(width, resized_width - x))
+        height = max(1, min(height, resized_height - y))
+        
+        bbox_data = {"x": x, "y": y, "width": width, "height": height}
+    
+    # Now scale to original dimensions
+    if scale_factor == 1.0:
+        return bbox_data
+
+    return {
+        "x": bbox_data["x"] / scale_factor,
+        "y": bbox_data["y"] / scale_factor,
+        "width": bbox_data["width"] / scale_factor,
+        "height": bbox_data["height"] / scale_factor,
+    }
+```
+
+#### Enhanced Context Builder with Image Dimensions
+
+```python
+async def _build_detection_context(
+    self, image_data: bytes, image_id: str, context: Optional[MCPContext]
+) -> Dict[str, Any]:
+    """Build rich context for MCP detection with proper coordinate validation"""
+
+    # Preprocess image and track dimensions for coordinate validation
+    processed_image_data, scale_factor = await self._preprocess_image_for_llm(image_data)
+    
+    # Get image dimensions for coordinate validation in prompt
+    original_width, original_height = await self._get_image_dimensions_from_data(image_data)
+    
+    # Calculate resized dimensions for validation
+    if scale_factor < 1.0:
+        max_dimension = 1024
+        if original_width > original_height:
+            resized_width = max_dimension
+            resized_height = int(original_height * scale_factor)
+        else:
+            resized_height = max_dimension
+            resized_width = int(original_width * scale_factor)
+    else:
+        resized_width = original_width
+        resized_height = original_height
+
+    detection_context = {
+        "image": {
+            "type": "image_url",
+            "image_url": {
+                "url": f"data:image/jpeg;base64,{image_b64}",
+                "detail": "high",
+            },
+        },
+        "task": "ui_element_detection",
+        "instructions": self._get_detection_instructions_with_coordinates(resized_width, resized_height),
+        "ui_element_types": ["button", "input", "radio", "dropdown"],
+        "coordinate_validation": {
+            "resized_width": resized_width,
+            "resized_height": resized_height,
+            "scale_factor": scale_factor
+        }
+    }
+    
+    # Add existing annotations context...
+    return detection_context
+```
+
+#### Validation-Enhanced MCP Prompt
+
+```python
+def _build_detection_prompt(self, context: Dict[str, Any]) -> str:
+    """Build detection prompt with enhanced coordinate validation context"""
+
+    # Get coordinate validation info
+    coord_validation = context.get("coordinate_validation", {})
+    resized_width = coord_validation.get("resized_width", "unknown")
+    resized_height = coord_validation.get("resized_height", "unknown")
+
+    base_prompt = f"""
+    🖼️ CRITICAL MCP COORDINATE INFORMATION:
+    - Image dimensions: {resized_width} × {resized_height} pixels
+    - Coordinate system: (0,0) is TOP-LEFT corner
+    - Maximum valid coordinates: x < {resized_width}, y < {resized_height}
+    - ALL coordinates must be within image bounds!
+    
+    ⚠️ MCP COORDINATE VALIDATION RULES:
+    - x coordinate: 0 ≤ x < {resized_width}
+    - y coordinate: 0 ≤ y < {resized_height}  
+    - width: 1 ≤ width ≤ {resized_width}
+    - height: 1 ≤ height ≤ {resized_height}
+    - x + width ≤ {resized_width}
+    - y + height ≤ {resized_height}
+    
+    Analyze this UI screenshot and detect interactive elements with high precision.
+    ENSURE ALL COORDINATES ARE WITHIN THE IMAGE BOUNDS: {resized_width}×{resized_height}!
+    
+    Return results in this JSON format:
+    {{
+        "elements": [
+            {{
+                "tag": "button",
+                "bounding_box": {{"x": 100, "y": 50, "width": 120, "height": 40}},
+                "confidence": 0.95,
+                "reasoning": "MCP-enhanced detection with coordinate validation"
+            }}
+        ]
+    }}
+    """
+    
+    # Add context-specific instructions...
+    return base_prompt
+```
+
+### Quality Improvements from Coordinate Validation
+
+| Aspect                    | Before Fix             | After MCP Enhancement   | Impact                |
+| ------------------------- | ---------------------- | ----------------------- | --------------------- |
+| **Coordinate Accuracy**   | ❌ Out-of-bounds errors | ✅ Validated coordinates | Reliable UI rendering |
+| **Scale Factor Handling** | ⚠️ Manual tracking      | ✅ Automatic validation  | Consistent scaling    |
+| **Error Prevention**      | ❌ Runtime failures     | ✅ Pre-validation        | Robust system         |
+| **Debugging**             | ⚠️ Silent failures      | ✅ Detailed logging      | Easy troubleshooting  |
+
+### MCP-Specific Enhancements
+
+```python
+async def _parse_detection_results(
+    self, raw_results: Dict[str, Any], scale_factor: float = 1.0
+) -> List[DetectedElement]:
+    """Parse MCP results with enhanced coordinate validation"""
+
+    detected_elements = []
+
+    try:
+        # Extract content from MCP response
+        content = raw_results.get("content", "")
+        
+        # Parse JSON response
+        detection_data = json.loads(content)
+
+        for idx, element_data in enumerate(detection_data.get("elements", [])):
+            # Enhanced coordinate validation before creating DetectedElement
+            bbox_data = element_data["bounding_box"]
+            
+            # Get validation context from raw_results
+            coord_validation = raw_results.get("coordinate_validation", {})
+            resized_width = coord_validation.get("resized_width", 1024)  # fallback
+            resized_height = coord_validation.get("resized_height", 1024)  # fallback
+
+            # Validate and scale coordinates
+            scaled_bbox = self._validate_and_scale_coordinates(
+                bbox_data, scale_factor, resized_width, resized_height
+            )
+
+            detected_element = DetectedElement(
+                id=f"mcp_elem_{idx}_{int(datetime.now().timestamp())}",
+                tag=UIElementTag(element_data["tag"]),
+                bounding_box=BoundingBox(**scaled_bbox),
+                confidence=element_data.get("confidence", 0.8),
+                reasoning=element_data.get("reasoning"),
+                model_version="gpt-4-vision-mcp",
+                detection_timestamp=datetime.now(),
+            )
+            detected_elements.append(detected_element)
+
+        # Log validation success
+        if scale_factor != 1.0:
+            logger.info(
+                f"MCP: Successfully validated and scaled {len(detected_elements)} annotations "
+                f"(scale factor: {scale_factor:.3f}) back to original dimensions"
+            )
+
+    except (json.JSONDecodeError, KeyError, ValueError) as e:
+        logger.error(f"MCP: Failed to parse detection results with coordinate validation: {e}")
+
+    return detected_elements
+```
+
+This comprehensive coordinate validation ensures that MCP-enhanced predictions are mathematically correct and render properly in the enhanced annotation viewer, providing the same reliability as direct LLM service predictions while maintaining the benefits of enhanced context awareness.
+
 ### MVP Environment Requirements
 
 ```bash

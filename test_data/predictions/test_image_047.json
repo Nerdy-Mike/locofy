@@ -1,0 +1,148 @@
+{
+  "image_id": "test_image_047",
+  "predictions": [
+    {
+      "id": "19ec064e-53af-48da-92b8-18b47a54a8a6",
+      "image_id": "test_image_047",
+      "bounding_box": {
+        "x": 1001.0532438648469,
+        "y": 213.54349305526563,
+        "width": 170.5498511944378,
+        "height": 27.628957305683084
+      },
+      "tag": "radio",
+      "confidence": 0.78,
+      "annotator": "gpt-4v",
+      "created_at": "2024-01-01T10:05:00.000Z",
+      "updated_at": "2024-01-01T10:05:00.000Z",
+      "status": "draft",
+      "reviewed_by": null,
+      "reviewed_at": null,
+      "conflicts_with": [],
+      "reasoning": null
+    },
+    {
+      "id": "ba66ff28-625a-4023-9dbd-aa31c3f655e0",
+      "image_id": "test_image_047",
+      "bounding_box": {
+        "x": 209.81164265222026,
+        "y": 856.6709473766855,
+        "width": 261.92260227560604,
+        "height": 67.545251260772
+      },
+      "tag": "input",
+      "confidence": 0.71,
+      "annotator": "gpt-4v",
+      "created_at": "2024-01-01T10:05:00.000Z",
+      "updated_at": "2024-01-01T10:05:00.000Z",
+      "status": "draft",
+      "reviewed_by": null,
+      "reviewed_at": null,
+      "conflicts_with": [],
+      "reasoning": null
+    },
+    {
+      "id": "a410953f-21f4-447d-b4ab-fbdbd55bacd2",
+      "image_id": "test_image_047",
+      "bounding_box": {
+        "x": 697.6263413871279,
+        "y": 463.9623082574505,
+        "width": 215.68669382527335,
+        "height": 185.96812912378505
+      },
+      "tag": "input",
+      "confidence": 0.57,
+      "annotator": "gpt-4v",
+      "created_at": "2024-01-01T10:05:00.000Z",
+      "updated_at": "2024-01-01T10:05:00.000Z",
+      "status": "draft",
+      "reviewed_by": null,
+      "reviewed_at": null,
+      "conflicts_with": [],
+      "reasoning": null
+    },
+    {
+      "id": "b60ce7fe-5f47-44e3-845f-3535871546c1",
+      "image_id": "test_image_047",
+      "bounding_box": {
+        "x": 59.0,
+        "y": 755.0,
+        "width": 241.0,
+        "height": 222.0
+      },
+      "tag": "input",
+      "confidence": 0.48,
+      "annotator": "gpt-4v",
+      "created_at": "2024-01-01T10:05:00.000Z",
+      "updated_at": "2024-01-01T10:05:00.000Z",
+      "status": "draft",
+      "reviewed_by": null,
+      "reviewed_at": null,
+      "conflicts_with": [],
+      "reasoning": null
+    },
+    {
+      "id": "326243db-1fbc-4b58-bc10-eba028402a65",
+      "image_id": "test_image_047",
+      "bounding_box": {
+        "x": 9.0,
+        "y": 721.0,
+        "width": 239.0,
+        "height": 219.0
+      },
+      "tag": "input",
+      "confidence": 0.38,
+      "annotator": "gpt-4v",
+      "created_at": "2024-01-01T10:05:00.000Z",
+      "updated_at": "2024-01-01T10:05:00.000Z",
+      "status": "draft",
+      "reviewed_by": null,
+      "reviewed_at": null,
+      "conflicts_with": [],
+      "reasoning": null
+    },
+    {
+      "id": "a8a8bc80-56b1-4ff2-9aea-ee60dbf457cd",
+      "image_id": "test_image_047",
+      "bounding_box": {
+        "x": 1637.0,
+        "y": 892.0,
+        "width": 52.0,
+        "height": 72.0
+      },
+      "tag": "input",
+      "confidence": 0.45,
+      "annotator": "gpt-4v",
+      "created_at": "2024-01-01T10:05:00.000Z",
+      "updated_at": "2024-01-01T10:05:00.000Z",
+      "status": "draft",
+      "reviewed_by": null,
+      "reviewed_at": null,
+      "conflicts_with": [],
+      "reasoning": null
+    },
+    {
+      "id": "720880c2-1173-4d05-87e0-f58c5fa29b4a",
+      "image_id": "test_image_047",
+      "bounding_box": {
+        "x": 233.0,
+        "y": 268.0,
+        "width": 120.0,
+        "height": 254.0
+      },
+      "tag": "dropdown",
+      "confidence": 0.51,
+      "annotator": "gpt-4v",
+      "created_at": "2024-01-01T10:05:00.000Z",
+      "updated_at": "2024-01-01T10:05:00.000Z",
+      "status": "draft",
+      "reviewed_by": null,
+      "reviewed_at": null,
+      "conflicts_with": [],
+      "reasoning": null
+    }
+  ],
+  "llm_model": "gpt-4o-test",
+  "processing_time": 5.835,
+  "created_at": "2024-01-01T10:05:00.000Z"
+}

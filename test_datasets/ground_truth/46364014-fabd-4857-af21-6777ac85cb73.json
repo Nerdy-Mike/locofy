@@ -1,0 +1,82 @@
+[
+  {
+    "id": "e02c9a3b-9b37-4d83-8303-8539c1445f98",
+    "image_id": "46364014-fabd-4857-af21-6777ac85cb73",
+    "bounding_box": {
+      "x": 62.0,
+      "y": 154.0,
+      "width": 218.0,
+      "height": 35.0
+    },
+    "tag": "dropdown",
+    "confidence": null,
+    "annotator": "human_annotator",
+    "created_at": "2025-06-23T10:05:23.700972",
+    "updated_at": "2025-07-13T00:23:09.700979",
+    "status": "active",
+    "reviewed_by": null,
+    "reviewed_at": null,
+    "conflicts_with": [],
+    "reasoning": null
+  },
+  {
+    "id": "c0317106-01b9-4248-b02a-c5fae2c4b3ab",
+    "image_id": "46364014-fabd-4857-af21-6777ac85cb73",
+    "bounding_box": {
+      "x": 177.0,
+      "y": 9.0,
+      "width": 203.0,
+      "height": 52.0
+    },
+    "tag": "button",
+    "confidence": null,
+    "annotator": "human_annotator",
+    "created_at": "2025-07-09T08:58:57.700990",
+    "updated_at": "2025-06-23T04:21:45.700993",
+    "status": "active",
+    "reviewed_by": null,
+    "reviewed_at": null,
+    "conflicts_with": [],
+    "reasoning": null
+  },
+  {
+    "id": "a5f4c8b4-56a4-4b83-bf19-aa8eb62c6c3d",
+    "image_id": "46364014-fabd-4857-af21-6777ac85cb73",
+    "bounding_box": {
+      "x": 121.0,
+      "y": 429.0,
+      "width": 151.0,
+      "height": 32.0
+    },
+    "tag": "dropdown",
+    "confidence": null,
+    "annotator": "human_annotator",
+    "created_at": "2025-07-16T23:54:51.701001",
+    "updated_at": "2025-06-26T00:26:31.701003",
+    "status": "active",
+    "reviewed_by": null,
+    "reviewed_at": null,
+    "conflicts_with": [],
+    "reasoning": null
+  },
+  {
+    "id": "50196d44-dae3-41b2-a452-da31fe97fd5c",
+    "image_id": "46364014-fabd-4857-af21-6777ac85cb73",
+    "bounding_box": {
+      "x": 148.0,
+      "y": 97.0,
+      "width": 245.0,
+      "height": 38.0
+    },
+    "tag": "input",
+    "confidence": null,
+    "annotator": "human_annotator",
+    "created_at": "2025-07-17T15:31:30.701013",
+    "updated_at": "2025-06-29T14:12:50.701015",
+    "status": "active",
+    "reviewed_by": null,
+    "reviewed_at": null,
+    "conflicts_with": [],
+    "reasoning": null
+  }
+]

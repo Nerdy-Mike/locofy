@@ -757,6 +757,46 @@ class DataValidator:
         )
     
     @staticmethod
+    def validate_ai_prediction_coordinates(
+        predictions: List[Dict], resized_width: int, resized_height: int
+    ) -> List[Dict]:
+        """
+        Validate AI prediction coordinates against resized image bounds before scaling
+        
+        Critical enhancement for production stability - prevents out-of-bounds coordinates
+        that caused rendering failures in the enhanced annotation viewer.
+        """
+        validated_predictions = []
+        
+        for pred in predictions:
+            bbox = pred.get("bounding_box", {})
+            x, y = bbox.get("x", 0), bbox.get("y", 0)
+            width, height = bbox.get("width", 0), bbox.get("height", 0)
+            
+            # Validate and clamp coordinates to resized image bounds
+            if (x < 0 or y < 0 or 
+                x + width > resized_width or 
+                y + height > resized_height or
+                width <= 0 or height <= 0):
+                
+                # Clamp to valid range with logging
+                original_coords = f"({x}, {y}) {width}×{height}"
+                x = max(0, min(x, resized_width - 1))
+                y = max(0, min(y, resized_height - 1))
+                width = max(1, min(width, resized_width - x))
+                height = max(1, min(height, resized_height - y))
+                
+                print(f"WARNING: Clamped out-of-bounds AI coordinates {original_coords} "
+                      f"to ({x}, {y}) {width}×{height} for {resized_width}×{resized_height} image")
+                
+                # Update bounding box with clamped values
+                pred["bounding_box"] = {"x": x, "y": y, "width": width, "height": height}
+            
+            validated_predictions.append(pred)
+        
+        return validated_predictions
+    
+    @staticmethod
     def validate_quality_metrics(metrics: QualityMetrics) -> bool:
         """Validate quality metrics consistency"""
         return (

@@ -1,0 +1,41 @@
+{
+  "summary": {
+    "processed_files": 100,
+    "skipped_files": 0,
+    "iou_threshold": 0.7
+  },
+  "by_tag": {
+    "button": {
+      "total_ground_truth_boxes": 98,
+      "total_predicted_boxes": 132,
+      "correctly_predicted_boxes": 66,
+      "precision": 0.5,
+      "recall": 0.6735,
+      "f1_score": 0.5739
+    },
+    "input": {
+      "total_ground_truth_boxes": 114,
+      "total_predicted_boxes": 145,
+      "correctly_predicted_boxes": 69,
+      "precision": 0.4759,
+      "recall": 0.6053,
+      "f1_score": 0.5328
+    },
+    "radio": {
+      "total_ground_truth_boxes": 110,
+      "total_predicted_boxes": 140,
+      "correctly_predicted_boxes": 75,
+      "precision": 0.5357,
+      "recall": 0.6818,
+      "f1_score": 0.6
+    },
+    "dropdown": {
+      "total_ground_truth_boxes": 117,
+      "total_predicted_boxes": 147,
+      "correctly_predicted_boxes": 85,
+      "precision": 0.5782,
+      "recall": 0.7265,
+      "f1_score": 0.6439
+    }
+  }
+}

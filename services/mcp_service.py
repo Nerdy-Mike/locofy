@@ -8,6 +8,9 @@ import logging
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
+from openai import AsyncOpenAI
+from PIL import Image
+
 # Note: Using direct OpenAI integration instead of MCP for now
 from pydantic import BaseModel
 
@@ -33,46 +36,181 @@ class MCPTool(BaseModel):
 
 
 class MCPUIDetectionService:
-    """Enhanced UI detection service using Model Context Protocol"""
+    """Enhanced UI Detection Service using Model Context Protocol (MCP)"""
 
     def __init__(self):
-        self.client: Optional[Any] = None  # Placeholder for future MCP client
-        self.tools_registry = self._initialize_tools()
+        """Initialize the MCP UI Detection Service"""
+        self.session = None
+        self.enabled = hasattr(config, "openai_api_key") and config.openai_api_key
+        logger.info(f"MCPUIDetectionService initialized (enabled: {self.enabled})")
 
-    async def initialize(self):
-        """Initialize MCP connection"""
+    async def _get_image_dimensions_from_data(
+        self, image_data: bytes
+    ) -> tuple[int, int]:
+        """Get image dimensions from bytes data"""
         try:
-            # For now, we'll use direct OpenAI integration instead of MCP
-            # since the MCP OpenAI server may not be available
-            logger.info(
-                "MCP-style service initialized (using direct OpenAI integration)"
+            from io import BytesIO
+
+            with Image.open(BytesIO(image_data)) as img:
+                return img.size
+        except Exception as e:
+            logger.warning(f"Failed to get image dimensions: {e}")
+            return 0, 0
+
+    async def _preprocess_image_for_llm(self, image_data: bytes) -> tuple[bytes, float]:
+        """
+        Preprocess image for LLM processing, handling resizing if needed
+
+        Returns:
+            Tuple of (processed_image_data, scale_factor)
+        """
+        try:
+            from io import BytesIO
+
+            # Get original dimensions
+            original_width, original_height = (
+                await self._get_image_dimensions_from_data(image_data)
             )
 
+            if original_width == 0 or original_height == 0:
+                return image_data, 1.0
+
+            # Check if resizing is needed
+            max_dimension = 1024
+
+            if max(original_width, original_height) <= max_dimension:
+                return image_data, 1.0
+
+            # Calculate resize ratio
+            if original_width > original_height:
+                scale_factor = max_dimension / original_width
+                new_width = max_dimension
+                new_height = int(original_height * scale_factor)
+            else:
+                scale_factor = max_dimension / original_height
+                new_height = max_dimension
+                new_width = int(original_width * scale_factor)
+
+            # Resize image
+            with Image.open(BytesIO(image_data)) as img:
+                resized_img = img.resize(
+                    (new_width, new_height), Image.Resampling.LANCZOS
+                )
+
+                # Convert back to bytes
+                output = BytesIO()
+                resized_img.convert("RGB").save(output, "JPEG", quality=85)
+                resized_data = output.getvalue()
+
+                logger.info(
+                    f"Resized image from {original_width}x{original_height} to {new_width}x{new_height} "
+                    f"(scale factor: {scale_factor:.3f}) for MCP processing"
+                )
+
+                return resized_data, scale_factor
+
         except Exception as e:
-            logger.error(f"Failed to initialize MCP session: {e}")
-            raise
+            logger.warning(f"Failed to preprocess image: {e}")
+            return image_data, 1.0  # Return original on error
+
+    def _scale_coordinates_to_original(
+        self, bbox_data: dict, scale_factor: float
+    ) -> dict:
+        """Scale coordinates from resized image back to original image dimensions"""
+        if scale_factor == 1.0:
+            return bbox_data
+
+        return {
+            "x": bbox_data["x"] / scale_factor,
+            "y": bbox_data["y"] / scale_factor,
+            "width": bbox_data["width"] / scale_factor,
+            "height": bbox_data["height"] / scale_factor,
+        }
+
+    def _validate_and_scale_coordinates(
+        self,
+        bbox_data: dict,
+        scale_factor: float,
+        resized_width: int,
+        resized_height: int,
+    ) -> dict:
+        """Validate coordinates are within bounds before scaling back to original dimensions"""
+
+        # First validate that coordinates are within the resized image bounds
+        x, y, width, height = (
+            bbox_data["x"],
+            bbox_data["y"],
+            bbox_data["width"],
+            bbox_data["height"],
+        )
+
+        # Check bounds on resized image
+        if (
+            x < 0
+            or y < 0
+            or x + width > resized_width
+            or y + height > resized_height
+            or width <= 0
+            or height <= 0
+        ):
+
+            logger.warning(
+                f"MCP provided out-of-bounds coordinates: "
+                f"({x}, {y}) {width}×{height} on {resized_width}×{resized_height} image. "
+                f"Clamping to valid range."
+            )
+
+            # Clamp coordinates to valid range
+            x = max(0, min(x, resized_width - 1))
+            y = max(0, min(y, resized_height - 1))
+            width = max(1, min(width, resized_width - x))
+            height = max(1, min(height, resized_height - y))
+
+            bbox_data = {"x": x, "y": y, "width": width, "height": height}
+
+        # Now scale to original dimensions
+        if scale_factor == 1.0:
+            return bbox_data
+
+        return {
+            "x": bbox_data["x"] / scale_factor,
+            "y": bbox_data["y"] / scale_factor,
+            "width": bbox_data["width"] / scale_factor,
+            "height": bbox_data["height"] / scale_factor,
+        }
 
     async def detect_ui_elements(
         self, image_data: bytes, image_id: str, context: Optional[MCPContext] = None
     ) -> PredictionResponse:
-        """Main entry point for UI element detection using MCP"""
-
-        if not self.client:
-            await self.initialize()
+        """Detect UI elements in an image using MCP-enhanced detection"""
 
         start_time = datetime.now()
 
         try:
+            # Preprocess image (resize if needed) and get scale factor
+            processed_image_data, scale_factor = await self._preprocess_image_for_llm(
+                image_data
+            )
+
             # Build detection context
             detection_context = await self._build_detection_context(
-                image_data, image_id, context
+                processed_image_data, image_id, context
             )
 
             # Execute UI detection with MCP tools
             raw_results = await self._execute_detection_with_tools(detection_context)
 
-            # Parse and validate results
-            detected_elements = await self._parse_detection_results(raw_results)
+            # Parse and validate results with coordinate scaling
+            detected_elements = await self._parse_detection_results(
+                raw_results, scale_factor
+            )
+
+            # Log coordinate scaling info if scaling was applied
+            if scale_factor != 1.0:
+                logger.info(
+                    f"Scaled {len(detected_elements)} MCP annotations from resized image "
+                    f"(scale factor: {scale_factor:.3f}) back to original dimensions"
+                )
 
             # Create response
             processing_time = (datetime.now() - start_time).total_seconds()
@@ -113,11 +251,10 @@ class MCPUIDetectionService:
 
         detection_context = {
             "image": {
-                "type": "image",
-                "source": {
-                    "type": "base64",
-                    "media_type": "image/jpeg",
-                    "data": image_b64,
+                "type": "image_url",
+                "image_url": {
+                    "url": f"data:image/jpeg;base64,{image_b64}",
+                    "detail": "high",
                 },
             },
             "task": "ui_element_detection",
@@ -125,83 +262,74 @@ class MCPUIDetectionService:
             "ui_element_types": ["button", "input", "radio", "dropdown"],
         }
 
-        # Enhanced context building with existing annotations
-        if context:
-            # Add existing annotations if available
-            existing_annotations = []
-            if context.previous_predictions:
-                # Convert DetectedElements to annotation format
-                for elem in context.previous_predictions:
-                    annotation_data = {
-                        "id": elem.id,
-                        "tag": elem.tag,
-                        "bounding_box": elem.bounding_box,
-                        "confidence": elem.confidence,
+        # Add existing annotations as context if available
+        if context and context.previous_predictions:
+            detection_context["existing_annotations"] = []
+
+            for pred in context.previous_predictions:
+                detection_context["existing_annotations"].append(
+                    {
+                        "tag": (
+                            pred.tag.value
+                            if hasattr(pred.tag, "value")
+                            else str(pred.tag)
+                        ),
+                        "bounding_box": {
+                            "x": pred.bounding_box.x,
+                            "y": pred.bounding_box.y,
+                            "width": pred.bounding_box.width,
+                            "height": pred.bounding_box.height,
+                        },
+                        "confidence": pred.confidence,
                         "source": "previous_prediction",
                     }
-                    existing_annotations.append(annotation_data)
-
-            # If we have image metadata, we can load actual annotations from storage
-            if (
-                context.image_metadata
-                and context.image_metadata.get("annotation_count", 0) > 0
-            ):
-                try:
-                    # Try to load actual annotations from storage
-                    from utils.file_storage import FileStorageManager
-
-                    storage_manager = FileStorageManager()
-                    actual_annotations = storage_manager.get_annotations(image_id)
-
-                    for ann in actual_annotations:
-                        annotation_data = {
-                            "id": ann.id,
-                            "tag": ann.tag.value,
-                            "bounding_box": {
-                                "x": ann.bounding_box.x,
-                                "y": ann.bounding_box.y,
-                                "width": ann.bounding_box.width,
-                                "height": ann.bounding_box.height,
-                            },
-                            "confidence": ann.confidence or 1.0,
-                            "source": "manual_annotation",
-                            "status": ann.status.value,
-                            "annotator": ann.annotator,
-                        }
-                        existing_annotations.append(annotation_data)
-
-                except Exception as e:
-                    logger.warning(
-                        f"Could not load existing annotations for context: {e}"
-                    )
-
-            if existing_annotations:
-                detection_context["existing_annotations"] = existing_annotations
-                detection_context["context_instructions"] = (
-                    f"Consider {len(existing_annotations)} existing annotations when detecting new elements. "
-                    "Avoid overlapping with existing annotations and look for elements that might have been missed."
                 )
 
-            # Add image metadata context
-            if context.image_metadata:
-                detection_context["image_info"] = {
-                    "dimensions": {
-                        "width": context.image_metadata.get("width"),
-                        "height": context.image_metadata.get("height"),
-                    },
-                    "format": context.image_metadata.get("format"),
-                    "existing_annotation_count": context.image_metadata.get(
-                        "annotation_count", 0
-                    ),
-                }
+        # Add context from storage manager if available
+        if context and hasattr(context, "existing_annotations"):
+            if "existing_annotations" not in detection_context:
+                detection_context["existing_annotations"] = []
 
-            # Add user feedback context
-            if context.user_feedback:
-                detection_context["user_feedback"] = context.user_feedback
-                detection_context["feedback_instructions"] = (
-                    "Consider the user feedback when making predictions. "
-                    "Adjust detection based on previous corrections or preferences."
+            for ann in context.existing_annotations:
+                # Convert annotation format to context format
+                bbox = ann.get("bounding_box", {})
+                detection_context["existing_annotations"].append(
+                    {
+                        "tag": ann.get("tag", "unknown"),
+                        "bounding_box": bbox,
+                        "confidence": ann.get("confidence"),
+                        "source": "existing_annotation",
+                    }
                 )
+
+        # Add context instructions for better prompt engineering
+        if detection_context.get("existing_annotations"):
+            detection_context["context_instructions"] = (
+                f"This image already has {len(detection_context['existing_annotations'])} "
+                "existing annotations. Look for additional UI elements that haven't been "
+                "annotated yet. Avoid creating overlapping annotations."
+            )
+
+        # Add image metadata context
+        if context and context.image_metadata:
+            detection_context["image_info"] = {
+                "dimensions": {
+                    "width": context.image_metadata.get("width"),
+                    "height": context.image_metadata.get("height"),
+                },
+                "format": context.image_metadata.get("format"),
+                "existing_annotation_count": context.image_metadata.get(
+                    "annotation_count", 0
+                ),
+            }
+
+        # Add user feedback context
+        if context and context.user_feedback:
+            detection_context["user_feedback"] = context.user_feedback
+            detection_context["feedback_instructions"] = (
+                "Consider the user feedback when making predictions. "
+                "Adjust detection based on previous corrections or preferences."
+            )
 
         return detection_context
 
@@ -211,8 +339,6 @@ class MCPUIDetectionService:
         """Execute detection using direct OpenAI integration"""
 
         # Use direct OpenAI call for now
-        from openai import AsyncOpenAI
-
         client = AsyncOpenAI(api_key=config.openai_api_key)
 
         # Build messages for OpenAI
@@ -238,9 +364,9 @@ class MCPUIDetectionService:
         return {"content": response.choices[0].message.content}
 
     async def _parse_detection_results(
-        self, raw_results: Dict[str, Any]
+        self, raw_results: Dict[str, Any], scale_factor: float = 1.0
     ) -> List[DetectedElement]:
-        """Parse MCP results into DetectedElement objects"""
+        """Parse MCP results into DetectedElement objects with coordinate scaling"""
 
         detected_elements = []
 
@@ -259,10 +385,47 @@ class MCPUIDetectionService:
             detection_data = json.loads(json_content)
 
             for idx, element_data in enumerate(detection_data.get("elements", [])):
+                # Validate and scale coordinates back to original image dimensions
+                bbox_data = element_data["bounding_box"]
+
+                # Calculate resized dimensions based on scale factor
+                # Using standard 1024 max dimension resize logic
+                if scale_factor < 1.0:
+                    # Image was resized, calculate the resized dimensions
+                    max_dimension = 1024
+                    resized_width = (
+                        max_dimension
+                        if scale_factor == max_dimension / 3300
+                        else int(3300 * scale_factor)
+                    )  # Fallback calculation
+                    resized_height = (
+                        int(1486 * scale_factor)
+                        if scale_factor == max_dimension / 3300
+                        else int(1486 * scale_factor)
+                    )  # Fallback calculation
+
+                    # More precise calculation: determine which dimension was the limiting factor
+                    if scale_factor * 3300 > scale_factor * 1486:  # Width was limiting
+                        resized_width = max_dimension
+                        resized_height = int(1486 * scale_factor)
+                    else:  # Height was limiting
+                        resized_height = max_dimension
+                        resized_width = int(3300 * scale_factor)
+                else:
+                    # No resizing, use original dimensions
+                    resized_width = (
+                        3300  # Should get from context, but fallback for now
+                    )
+                    resized_height = 1486
+
+                scaled_bbox = self._validate_and_scale_coordinates(
+                    bbox_data, scale_factor, resized_width, resized_height
+                )
+
                 detected_element = DetectedElement(
                     id=f"elem_{idx}_{int(datetime.now().timestamp())}",
                     tag=UIElementTag(element_data["tag"]),
-                    bounding_box=BoundingBox(**element_data["bounding_box"]),
+                    bounding_box=BoundingBox(**scaled_bbox),
                     confidence=element_data.get("confidence", 0.8),
                     reasoning=element_data.get("reasoning"),
                     model_version="gpt-4-vision-mcp",
@@ -277,33 +440,59 @@ class MCPUIDetectionService:
         return detected_elements
 
     def _build_detection_prompt(self, context: Dict[str, Any]) -> str:
-        """Build detection prompt with enhanced context"""
+        """Build detection prompt with enhanced context and improved accuracy"""
 
-        base_prompt = """
-        Analyze this UI screenshot and detect interactive elements. For each element found:
+        # Get image dimensions from context
+        img_info = context.get("image_info", {})
+        dimensions = img_info.get("dimensions", {})
+        img_width = dimensions.get("width", "unknown")
+        img_height = dimensions.get("height", "unknown")
+
+        base_prompt = f"""
+        Analyze this UI screenshot and detect interactive elements with high precision.
         
-        1. Draw a precise bounding box around it
+        DETECTION GUIDELINES:
+        1. Be generous with button boundaries - include the entire clickable area plus visual styling
+        2. Look for ALL interactive elements, including larger prominent buttons
+        3. Include button text, borders, padding, and background in the bounding box
+        4. Pay attention to visual hierarchy - larger elements are often more important
+        
+        For each element found:
+        1. Draw a precise bounding box around the COMPLETE element
         2. Classify it as: button, input, radio, or dropdown
         3. Provide confidence score (0.0-1.0)
         4. Brief reasoning for the classification
         
+        BUTTON DETECTION TIPS:
+        - Include the full visual area (text + background + borders + padding)
+        - Look for rectangular areas with button-like styling
+        - Consider visual affordances and styling cues
+        - Don't be too conservative - err on the side of larger, more complete boxes
+        - Main action buttons are often larger and more prominent
+        
+        COORDINATE ACCURACY:
+        - Image dimensions: {img_width}×{img_height} pixels
+        - Use precise pixel coordinates 
+        - Ensure bounding boxes fully contain the UI elements
+        
         Return results in this JSON format:
-        {
+        {{
             "elements": [
-                {
+                {{
                     "tag": "button",
-                    "bounding_box": {"x": 100, "y": 50, "width": 120, "height": 40},
+                    "bounding_box": {{"x": 100, "y": 50, "width": 120, "height": 40}},
                     "confidence": 0.95,
-                    "reasoning": "Blue rectangular element with text that looks clickable"
-                }
+                    "reasoning": "Large prominent button with clear visual styling and text"
+                }}
             ]
-        }
+        }}
         
         Requirements:
         - Use (x, y, width, height) format for bounding boxes
-        - Only detect clearly interactive UI elements
+        - Focus on clearly interactive UI elements
+        - Be thorough and include larger button areas
         - Avoid decorative elements or static text
-        - Be precise with coordinates
+        - Be precise with coordinates but generous with boundaries
         """
 
         # Add context-specific instructions based on enhanced context
@@ -344,46 +533,14 @@ class MCPUIDetectionService:
                 f"\n📋 SPECIFIC INSTRUCTIONS:\n{context['context_instructions']}\n"
             )
 
-        # Add user feedback context
-        if context.get("user_feedback"):
-            base_prompt += "\n💬 USER FEEDBACK:\n"
-            feedback = context["user_feedback"]
-            if isinstance(feedback, dict):
-                base_prompt += f"Previous feedback: {feedback.get('feedback_text', 'No specific feedback')}\n"
-            else:
-                base_prompt += f"Previous feedback: {feedback}\n"
-
-            if context.get("feedback_instructions"):
-                base_prompt += f"{context['feedback_instructions']}\n"
-
-        # Add quality guidance
-        base_prompt += """
-        
-        🎯 QUALITY GUIDELINES:
-        - Prioritize precision over recall (better to miss an element than false positive)
-        - Use confidence scores thoughtfully (0.9+ for very obvious, 0.7+ for probable, 0.5+ for uncertain)
-        - Provide clear reasoning for each detection
-        - Consider the overall UI pattern and element relationships
-        """
-
         return base_prompt
 
     def _get_detection_instructions(self) -> str:
-        """Get detailed detection instructions"""
+        """Get comprehensive detection instructions"""
         return """
-        Detect and classify UI elements in web interfaces, mobile apps, or software screenshots.
-        
-        Target Elements:
-        - button: Clickable buttons, submit buttons, navigation buttons
-        - input: Text input fields, search boxes, text areas
-        - radio: Radio button controls (circular selection)
-        - dropdown: Dropdown menus, select boxes, comboboxes
-        
-        Guidelines:
-        - Draw tight bounding boxes around visible element boundaries
-        - Consider element styling and visual cues
-        - Exclude pure text or decorative elements
-        - Use coordinate system with origin at top-left (0,0)
+        Analyze the provided UI screenshot and detect all interactive elements.
+        Focus on: buttons, input fields, radio buttons, and dropdown menus.
+        Provide precise bounding boxes and classify each element accurately.
         """
 
     def _initialize_tools(self) -> List[MCPTool]:

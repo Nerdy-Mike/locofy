@@ -1,0 +1,68 @@
+{
+  "image_id": "ebf5a313-6450-4327-9798-e2bf66fb3b66",
+  "predictions": [
+    {
+      "id": "6281d8e5-782b-4207-8d7c-41a99f465431",
+      "image_id": "ebf5a313-6450-4327-9798-e2bf66fb3b66",
+      "bounding_box": {
+        "x": 157.3787858896513,
+        "y": 618.158142868272,
+        "width": 258.05723266172515,
+        "height": 38.43405592834205
+      },
+      "tag": "radio",
+      "confidence": 0.93,
+      "annotator": "gpt-4v",
+      "created_at": "2025-07-04T05:07:20.718487",
+      "updated_at": "2025-06-27T10:19:27.718490",
+      "status": "draft",
+      "reviewed_by": null,
+      "reviewed_at": null,
+      "conflicts_with": [],
+      "reasoning": null
+    },
+    {
+      "id": "97b09b00-8251-41fc-8009-fdf9f1318bcc",
+      "image_id": "ebf5a313-6450-4327-9798-e2bf66fb3b66",
+      "bounding_box": {
+        "x": 13.24075723366514,
+        "y": 412.2035804012637,
+        "width": 165.85824032473872,
+        "height": 35.93595207036005
+      },
+      "tag": "dropdown",
+      "confidence": 0.83,
+      "annotator": "gpt-4v",
+      "created_at": "2025-07-13T22:22:04.718496",
+      "updated_at": "2025-07-22T06:10:02.718498",
+      "status": "draft",
+      "reviewed_by": null,
+      "reviewed_at": null,
+      "conflicts_with": [],
+      "reasoning": null
+    },
+    {
+      "id": "7e1f7a94-f489-4912-ac96-68c1b4ce1c88",
+      "image_id": "ebf5a313-6450-4327-9798-e2bf66fb3b66",
+      "bounding_box": {
+        "x": 218.64455807787164,
+        "y": 877.7174434277176,
+        "width": 17.447014186550508,
+        "height": 15.610486377439926
+      },
+      "tag": "radio",
+      "confidence": 0.76,
+      "annotator": "gpt-4v",
+      "created_at": "2025-07-03T03:22:21.718521",
+      "updated_at": "2025-07-22T05:48:22.718523",
+      "status": "draft",
+      "reviewed_by": null,
+      "reviewed_at": null,
+      "conflicts_with": [],
+      "reasoning": null
+    }
+  ],
+  "llm_model": "gpt-4o",
+  "processing_time": 4.0,
+  "created_at": "2025-07-04T12:16:09.718664"
+}

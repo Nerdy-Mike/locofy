@@ -410,11 +410,29 @@ class MultiSourceAnnotationRenderer:
 
             # Calculate coverage and confidence
             confidences = []
+            valid_annotations = 0
+
             for annotation in source.annotations:
-                bbox = annotation["bounding_box"]
-                area = bbox["width"] * bbox["height"]
-                source_info["coverage_pixels"] += area
-                covered_pixels += area
+                # Validate bounding box data
+                bbox = annotation.get("bounding_box")
+                if not bbox:
+                    continue
+
+                width = bbox.get("width")
+                height = bbox.get("height")
+
+                # Skip annotations with invalid dimensions
+                if width is None or height is None or width <= 0 or height <= 0:
+                    continue
+
+                try:
+                    area = int(width * height)
+                    source_info["coverage_pixels"] += area
+                    covered_pixels += area
+                    valid_annotations += 1
+                except (TypeError, ValueError):
+                    # Skip annotations with non-numeric dimensions
+                    continue
 
                 if "confidence" in annotation:
                     confidences.append(annotation["confidence"])
@@ -426,14 +444,18 @@ class MultiSourceAnnotationRenderer:
             if confidences:
                 source_info["average_confidence"] = sum(confidences) / len(confidences)
 
-            total_annotations += source_info["count"]
+            # Update count to reflect only valid annotations
+            source_info["valid_annotations"] = valid_annotations
+            total_annotations += valid_annotations
             report["sources"].append(source_info)
 
         # Update summary
         report["summary"]["total_annotations"] = total_annotations
         report["summary"]["coverage_percentage"] = (
-            covered_pixels / report["image_info"]["total_pixels"]
-        ) * 100
+            (covered_pixels / report["image_info"]["total_pixels"]) * 100
+            if report["image_info"]["total_pixels"] > 0
+            else 0.0
+        )
         report["summary"]["tag_distribution"] = all_tags
 
         return report
@@ -443,7 +465,31 @@ class MultiSourceAnnotationRenderer:
     ):
         """Add annotation to Plotly figure"""
 
-        bbox = annotation["bounding_box"]
+        # Validate bounding box data
+        bbox = annotation.get("bounding_box")
+        if not bbox:
+            return  # Skip annotations without bounding box
+
+        # Validate dimensions
+        x = bbox.get("x")
+        y = bbox.get("y")
+        width = bbox.get("width")
+        height = bbox.get("height")
+
+        # Skip annotations with invalid or missing coordinates
+        if any(v is None for v in [x, y, width, height]):
+            return
+
+        try:
+            x, y, width, height = float(x), float(y), float(width), float(height)
+
+            # Skip annotations with invalid dimensions
+            if width <= 0 or height <= 0:
+                return
+
+        except (TypeError, ValueError):
+            return  # Skip annotations with non-numeric coordinates
+
         tag = annotation.get("tag", "unknown")
         confidence = annotation.get("confidence")
 
@@ -460,10 +506,10 @@ class MultiSourceAnnotationRenderer:
         # Add rectangle with more prominent background
         fig.add_shape(
             type="rect",
-            x0=bbox["x"],
-            y0=bbox["y"],
-            x1=bbox["x"] + bbox["width"],
-            y1=bbox["y"] + bbox["height"],
+            x0=x,
+            y0=y,
+            x1=x + width,
+            y1=y + height,
             line=line_style,
             fillcolor=component_color,
             opacity=0.4,  # More prominent background
@@ -477,12 +523,10 @@ class MultiSourceAnnotationRenderer:
                 label_text += f" ({confidence:.2f})"
 
             # Position label
-            label_y = (
-                bbox["y"] - 15 if bbox["y"] > 20 else bbox["y"] + bbox["height"] + 15
-            )
+            label_y = y - 15 if y > 20 else y + height + 15
 
             fig.add_annotation(
-                x=bbox["x"] + bbox["width"] / 2,
+                x=x + width / 2,
                 y=label_y,
                 text=label_text,
                 showarrow=False,
@@ -505,9 +549,32 @@ class MultiSourceAnnotationRenderer:
     ):
         """Draw annotation using PIL"""
 
-        bbox = annotation["bounding_box"]
-        x, y = bbox["x"], bbox["y"]
-        x2, y2 = x + bbox["width"], y + bbox["height"]
+        # Validate bounding box data
+        bbox = annotation.get("bounding_box")
+        if not bbox:
+            return  # Skip annotations without bounding box
+
+        # Validate dimensions
+        x = bbox.get("x")
+        y = bbox.get("y")
+        width = bbox.get("width")
+        height = bbox.get("height")
+
+        # Skip annotations with invalid or missing coordinates
+        if any(v is None for v in [x, y, width, height]):
+            return
+
+        try:
+            x, y, width, height = int(x), int(y), int(width), int(height)
+
+            # Skip annotations with invalid dimensions
+            if width <= 0 or height <= 0:
+                return
+
+        except (TypeError, ValueError):
+            return  # Skip annotations with non-numeric coordinates
+
+        x2, y2 = x + width, y + height
 
         # Draw rectangle
         color = source.color

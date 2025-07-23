@@ -1,0 +1,42 @@
+[
+  {
+    "id": "10141475-5b8a-488c-b02a-110d4ea750b0",
+    "image_id": "958749c6-931a-4e3f-b995-bad5cfb91bb7",
+    "bounding_box": {
+      "x": 1768.0,
+      "y": 788.0,
+      "width": 20.0,
+      "height": 22.0
+    },
+    "tag": "radio",
+    "confidence": null,
+    "annotator": "human_annotator",
+    "created_at": "2025-06-23T17:02:19.373420",
+    "updated_at": "2025-07-07T06:41:15.373424",
+    "status": "active",
+    "reviewed_by": null,
+    "reviewed_at": null,
+    "conflicts_with": [],
+    "reasoning": null
+  },
+  {
+    "id": "ec636d39-1ea3-4eef-b7f8-31fc891764a3",
+    "image_id": "958749c6-931a-4e3f-b995-bad5cfb91bb7",
+    "bounding_box": {
+      "x": 1145.0,
+      "y": 497.0,
+      "width": 244.0,
+      "height": 41.0
+    },
+    "tag": "dropdown",
+    "confidence": null,
+    "annotator": "human_annotator",
+    "created_at": "2025-07-20T21:02:34.373431",
+    "updated_at": "2025-07-18T09:47:29.373434",
+    "status": "active",
+    "reviewed_by": null,
+    "reviewed_at": null,
+    "conflicts_with": [],
+    "reasoning": null
+  }
+]

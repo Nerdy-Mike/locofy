@@ -1,0 +1,88 @@
+{
+  "image_id": "d6f200e5-dc1e-4b8a-9b89-84903f81b170",
+  "predictions": [
+    {
+      "id": "ec78df57-43aa-4db0-8653-20ac8e5b6a23",
+      "image_id": "d6f200e5-dc1e-4b8a-9b89-84903f81b170",
+      "bounding_box": {
+        "x": 204.8956476678543,
+        "y": 2.178631454018065,
+        "width": 151.1097578350621,
+        "height": 32.574558575222966
+      },
+      "tag": "button",
+      "confidence": 0.87,
+      "annotator": "gpt-4v",
+      "created_at": "2025-07-19T17:22:21.708497",
+      "updated_at": "2025-07-11T05:59:09.708499",
+      "status": "draft",
+      "reviewed_by": null,
+      "reviewed_at": null,
+      "conflicts_with": [],
+      "reasoning": null
+    },
+    {
+      "id": "379b11ea-af1c-41ec-a4e0-bf7a2527f024",
+      "image_id": "d6f200e5-dc1e-4b8a-9b89-84903f81b170",
+      "bounding_box": {
+        "x": 66.31055342732813,
+        "y": 170.49379306465912,
+        "width": 198.34794326922068,
+        "height": 29.704281359158653
+      },
+      "tag": "input",
+      "confidence": 0.73,
+      "annotator": "gpt-4v",
+      "created_at": "2025-07-12T00:43:10.708506",
+      "updated_at": "2025-07-11T11:28:41.708508",
+      "status": "draft",
+      "reviewed_by": null,
+      "reviewed_at": null,
+      "conflicts_with": [],
+      "reasoning": null
+    },
+    {
+      "id": "5aac58d4-8aa3-4add-82d3-70f2d3f3510f",
+      "image_id": "d6f200e5-dc1e-4b8a-9b89-84903f81b170",
+      "bounding_box": {
+        "x": 136.86073325854773,
+        "y": 790.0827104598274,
+        "width": 210.29567117777745,
+        "height": 36.57316020483086
+      },
+      "tag": "input",
+      "confidence": 0.8,
+      "annotator": "gpt-4v",
+      "created_at": "2025-07-22T21:06:28.708514",
+      "updated_at": "2025-07-06T07:24:17.708516",
+      "status": "draft",
+      "reviewed_by": null,
+      "reviewed_at": null,
+      "conflicts_with": [],
+      "reasoning": null
+    },
+    {
+      "id": "accf286f-859f-40ab-835b-27c46bf82ce9",
+      "image_id": "d6f200e5-dc1e-4b8a-9b89-84903f81b170",
+      "bounding_box": {
+        "x": 80.11051415786527,
+        "y": 147.00299810844172,
+        "width": 15.603384952683491,
+        "height": 18.356923473745283
+      },
+      "tag": "radio",
+      "confidence": 0.94,
+      "annotator": "gpt-4v",
+      "created_at": "2025-07-07T04:03:43.708522",
+      "updated_at": "2025-06-28T11:14:01.708524",
+      "status": "draft",
+      "reviewed_by": null,
+      "reviewed_at": null,
+      "conflicts_with": [],
+      "reasoning": null
+    }
+  ],
+  "llm_model": "gpt-4o",
+  "processing_time": 7.37,
+  "created_at": "2025-07-05T06:01:22.708663"
+}

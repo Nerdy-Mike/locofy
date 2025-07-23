@@ -1,0 +1,42 @@
+[
+  {
+    "id": "348ddbc9-b60b-41e5-bb1c-5180ac0df119",
+    "image_id": "test_image_070",
+    "bounding_box": {
+      "x": 1505.0,
+      "y": 526.0,
+      "width": 115.0,
+      "height": 108.0
+    },
+    "tag": "button",
+    "confidence": null,
+    "annotator": "human_annotator",
+    "created_at": "2024-01-01T10:00:00.000Z",
+    "updated_at": "2024-01-01T10:00:00.000Z",
+    "status": "active",
+    "reviewed_by": null,
+    "reviewed_at": null,
+    "conflicts_with": [],
+    "reasoning": null
+  },
+  {
+    "id": "52858a17-c512-4e7f-a4fb-50e2c223b7c7",
+    "image_id": "test_image_070",
+    "bounding_box": {
+      "x": 877.0,
+      "y": 571.0,
+      "width": 213.0,
+      "height": 40.0
+    },
+    "tag": "radio",
+    "confidence": null,
+    "annotator": "human_annotator",
+    "created_at": "2024-01-01T10:00:00.000Z",
+    "updated_at": "2024-01-01T10:00:00.000Z",
+    "status": "active",
+    "reviewed_by": null,
+    "reviewed_at": null,
+    "conflicts_with": [],
+    "reasoning": null
+  }
+]

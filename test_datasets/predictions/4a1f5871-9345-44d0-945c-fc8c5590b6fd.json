@@ -1,0 +1,28 @@
+{
+  "image_id": "4a1f5871-9345-44d0-945c-fc8c5590b6fd",
+  "predictions": [
+    {
+      "id": "442c6534-1513-4659-9898-28ea48b522fe",
+      "image_id": "4a1f5871-9345-44d0-945c-fc8c5590b6fd",
+      "bounding_box": {
+        "x": 100.0,
+        "y": 373.0,
+        "width": 186.0,
+        "height": 31.0
+      },
+      "tag": "dropdown",
+      "confidence": 0.63,
+      "annotator": "gpt-4v",
+      "created_at": "2025-07-20T11:35:33.698642",
+      "updated_at": "2025-07-02T19:26:35.698644",
+      "status": "draft",
+      "reviewed_by": null,
+      "reviewed_at": null,
+      "conflicts_with": [],
+      "reasoning": null
+    }
+  ],
+  "llm_model": "gpt-4o",
+  "processing_time": 5.55,
+  "created_at": "2025-07-19T14:21:47.698742"
+}

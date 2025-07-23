@@ -1,0 +1,32 @@
+{
+  "id": "407d7021-3260-4be1-a8a6-10320e1e792a",
+  "filename": "407d7021-3260-4be1-a8a6-10320e1e792a.png",
+  "file_path": "data/images/407d7021-3260-4be1-a8a6-10320e1e792a.png",
+  "file_size": 312640,
+  "width": 3300,
+  "height": 1486,
+  "format": "PNG",
+  "upload_time": "2025-07-22T16:22:26.989381",
+  "annotation_count": 3,
+  "has_ai_predictions": true,
+  "validation_info": {
+    "checksum": "2fb3322654532c159b886834a4d4ca44",
+    "original_filename": "test-01.png",
+    "sanitized_filename": "407d7021-3260-4be1-a8a6-10320e1e792a.png",
+    "validation_timestamp": "2025-07-22T16:22:26.989326",
+    "file_size_bytes": 312640
+  },
+  "processing_status": "completed",
+  "error_message": null,
+  "llm_validation_result": {
+    "valid": true,
+    "confidence": 0.95,
+    "reason": "The image contains buttons and text consistent with a web or app interface, indicating interactive elements.",
+    "processing_time": 5.065633535385132,
+    "status": "valid",
+    "llm_model": "gpt-4o",
+    "validation_timestamp": "2025-07-22T16:22:26.965136",
+    "detected_elements": null,
+    "error_message": null
+  }
+}

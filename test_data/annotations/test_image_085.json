@@ -1,0 +1,22 @@
+[
+  {
+    "id": "46c3870a-4ffe-420d-847b-c02f5470c132",
+    "image_id": "test_image_085",
+    "bounding_box": {
+      "x": 159.0,
+      "y": 221.0,
+      "width": 56.0,
+      "height": 175.0
+    },
+    "tag": "button",
+    "confidence": null,
+    "annotator": "human_annotator",
+    "created_at": "2024-01-01T10:00:00.000Z",
+    "updated_at": "2024-01-01T10:00:00.000Z",
+    "status": "active",
+    "reviewed_by": null,
+    "reviewed_at": null,
+    "conflicts_with": [],
+    "reasoning": null
+  }
+]

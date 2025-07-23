@@ -335,7 +335,7 @@ class BatchAnnotationRequest(BaseModel):
 
 
 class ConflictInfo(BaseModel):
-    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    id: str = Field(default_factory=lambda: str(uuid4()))
     annotation_id: str
     image_id: str
     conflicts_with: List[str]

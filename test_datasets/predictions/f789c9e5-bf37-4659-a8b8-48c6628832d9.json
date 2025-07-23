@@ -1,0 +1,88 @@
+{
+  "image_id": "f789c9e5-bf37-4659-a8b8-48c6628832d9",
+  "predictions": [
+    {
+      "id": "1144e524-a488-4368-92fa-ccc9f41cf8a6",
+      "image_id": "f789c9e5-bf37-4659-a8b8-48c6628832d9",
+      "bounding_box": {
+        "x": 40.00323599679227,
+        "y": 464.72248476669205,
+        "width": 250.44823648148994,
+        "height": 48.54503262196281
+      },
+      "tag": "dropdown",
+      "confidence": 0.96,
+      "annotator": "gpt-4v",
+      "created_at": "2025-07-20T20:41:20.367978",
+      "updated_at": "2025-07-02T05:58:32.367980",
+      "status": "draft",
+      "reviewed_by": null,
+      "reviewed_at": null,
+      "conflicts_with": [],
+      "reasoning": null
+    },
+    {
+      "id": "2fec2c6f-000e-410a-b575-b517471efde2",
+      "image_id": "f789c9e5-bf37-4659-a8b8-48c6628832d9",
+      "bounding_box": {
+        "x": 451.9975780687346,
+        "y": 534.4276960905394,
+        "width": 177.2918073115186,
+        "height": 28.72325369851419
+      },
+      "tag": "input",
+      "confidence": 0.89,
+      "annotator": "gpt-4v",
+      "created_at": "2025-07-18T11:42:23.367996",
+      "updated_at": "2025-07-22T17:08:08.367997",
+      "status": "draft",
+      "reviewed_by": null,
+      "reviewed_at": null,
+      "conflicts_with": [],
+      "reasoning": null
+    },
+    {
+      "id": "9b72104a-f1f4-4237-bfb9-8d1bc6446ea6",
+      "image_id": "f789c9e5-bf37-4659-a8b8-48c6628832d9",
+      "bounding_box": {
+        "x": 417.60249695609957,
+        "y": 785.0825009186099,
+        "width": 221.45074717574195,
+        "height": 28.966131487122365
+      },
+      "tag": "input",
+      "confidence": 0.76,
+      "annotator": "gpt-4v",
+      "created_at": "2025-07-09T12:53:13.368004",
+      "updated_at": "2025-07-22T03:14:54.368005",
+      "status": "draft",
+      "reviewed_by": null,
+      "reviewed_at": null,
+      "conflicts_with": [],
+      "reasoning": null
+    },
+    {
+      "id": "e641b343-ca84-4aee-a0e1-966b3b29e345",
+      "image_id": "f789c9e5-bf37-4659-a8b8-48c6628832d9",
+      "bounding_box": {
+        "x": 368.245233325504,
+        "y": 304.65675024270075,
+        "width": 204.71174734214262,
+        "height": 36.4150704406696
+      },
+      "tag": "input",
+      "confidence": 0.92,
+      "annotator": "gpt-4v",
+      "created_at": "2025-07-12T03:19:29.368020",
+      "updated_at": "2025-06-29T08:54:01.368022",
+      "status": "draft",
+      "reviewed_by": null,
+      "reviewed_at": null,
+      "conflicts_with": [],
+      "reasoning": null
+    }
+  ],
+  "llm_model": "gpt-4o",
+  "processing_time": 5.58,
+  "created_at": "2025-06-30T14:22:41.368163"
+}

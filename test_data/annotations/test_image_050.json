@@ -1,0 +1,102 @@
+[
+  {
+    "id": "aa94ca96-ac1c-4a15-816c-6ed3b1a462af",
+    "image_id": "test_image_050",
+    "bounding_box": {
+      "x": 1183.0,
+      "y": 133.0,
+      "width": 192.0,
+      "height": 300.0
+    },
+    "tag": "dropdown",
+    "confidence": null,
+    "annotator": "human_annotator",
+    "created_at": "2024-01-01T10:00:00.000Z",
+    "updated_at": "2024-01-01T10:00:00.000Z",
+    "status": "active",
+    "reviewed_by": null,
+    "reviewed_at": null,
+    "conflicts_with": [],
+    "reasoning": null
+  },
+  {
+    "id": "d875b835-5833-48ac-8fe0-57a956e8bfa1",
+    "image_id": "test_image_050",
+    "bounding_box": {
+      "x": 94.0,
+      "y": 203.0,
+      "width": 195.0,
+      "height": 44.0
+    },
+    "tag": "dropdown",
+    "confidence": null,
+    "annotator": "human_annotator",
+    "created_at": "2024-01-01T10:00:00.000Z",
+    "updated_at": "2024-01-01T10:00:00.000Z",
+    "status": "active",
+    "reviewed_by": null,
+    "reviewed_at": null,
+    "conflicts_with": [],
+    "reasoning": null
+  },
+  {
+    "id": "b5e8a661-0e8b-483c-9be7-0892ee5c36bd",
+    "image_id": "test_image_050",
+    "bounding_box": {
+      "x": 1756.0,
+      "y": 161.0,
+      "width": 28.0,
+      "height": 83.0
+    },
+    "tag": "dropdown",
+    "confidence": null,
+    "annotator": "human_annotator",
+    "created_at": "2024-01-01T10:00:00.000Z",
+    "updated_at": "2024-01-01T10:00:00.000Z",
+    "status": "active",
+    "reviewed_by": null,
+    "reviewed_at": null,
+    "conflicts_with": [],
+    "reasoning": null
+  },
+  {
+    "id": "1a2ffb6b-9907-4df6-8d37-2fc41228890f",
+    "image_id": "test_image_050",
+    "bounding_box": {
+      "x": 876.0,
+      "y": 414.0,
+      "width": 253.0,
+      "height": 20.0
+    },
+    "tag": "input",
+    "confidence": null,
+    "annotator": "human_annotator",
+    "created_at": "2024-01-01T10:00:00.000Z",
+    "updated_at": "2024-01-01T10:00:00.000Z",
+    "status": "active",
+    "reviewed_by": null,
+    "reviewed_at": null,
+    "conflicts_with": [],
+    "reasoning": null
+  },
+  {
+    "id": "6ddc00d8-be60-4995-b27c-3e26a2fe0790",
+    "image_id": "test_image_050",
+    "bounding_box": {
+      "x": 561.0,
+      "y": 95.0,
+      "width": 174.0,
+      "height": 101.0
+    },
+    "tag": "radio",
+    "confidence": null,
+    "annotator": "human_annotator",
+    "created_at": "2024-01-01T10:00:00.000Z",
+    "updated_at": "2024-01-01T10:00:00.000Z",
+    "status": "active",
+    "reviewed_by": null,
+    "reviewed_at": null,
+    "conflicts_with": [],
+    "reasoning": null
+  }
+]

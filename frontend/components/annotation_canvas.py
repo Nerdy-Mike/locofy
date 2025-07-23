@@ -500,9 +500,18 @@ def annotation_controls(
                     f"**📏 Dimensions:** `{bbox['width']} × {bbox['height']} pixels`"
                 )
 
-                # Area calculation
-                area = bbox["width"] * bbox["height"]
-                st.markdown(f"**📐 Area:** `{area:,} px²`")
+                # Area calculation with validation
+                width = bbox.get("width", 0)
+                height = bbox.get("height", 0)
+
+                if width and height and width > 0 and height > 0:
+                    try:
+                        area = int(width * height)
+                        st.markdown(f"**📐 Area:** `{area:,} px²`")
+                    except (TypeError, ValueError):
+                        st.markdown("**📐 Area:** `Invalid dimensions`")
+                else:
+                    st.markdown("**📐 Area:** `Invalid dimensions`")
 
             with detail_col2:
                 # Visual preview (text-based)

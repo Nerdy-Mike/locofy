@@ -1,0 +1,68 @@
+{
+  "image_id": "a1f95e5b-2b6f-4371-90ed-4f197f703834",
+  "predictions": [
+    {
+      "id": "675fa9ca-1cfb-422e-afe9-e4d4636df4b3",
+      "image_id": "a1f95e5b-2b6f-4371-90ed-4f197f703834",
+      "bounding_box": {
+        "x": 18.650381040599324,
+        "y": 340.1504680671406,
+        "width": 22.16094141252408,
+        "height": 29.54792188336544
+      },
+      "tag": "radio",
+      "confidence": 0.89,
+      "annotator": "gpt-4v",
+      "created_at": "2025-07-15T17:58:34.381068",
+      "updated_at": "2025-06-30T15:01:21.381070",
+      "status": "draft",
+      "reviewed_by": null,
+      "reviewed_at": null,
+      "conflicts_with": [],
+      "reasoning": null
+    },
+    {
+      "id": "ca73b8c9-f511-4881-8293-1d19cfb8404f",
+      "image_id": "a1f95e5b-2b6f-4371-90ed-4f197f703834",
+      "bounding_box": {
+        "x": 628.60144947295,
+        "y": 498.7681606996641,
+        "width": 242.20388280713985,
+        "height": 52.78802574001766
+      },
+      "tag": "button",
+      "confidence": 0.79,
+      "annotator": "gpt-4v",
+      "created_at": "2025-07-20T21:52:40.381077",
+      "updated_at": "2025-07-19T19:38:38.381079",
+      "status": "draft",
+      "reviewed_by": null,
+      "reviewed_at": null,
+      "conflicts_with": [],
+      "reasoning": null
+    },
+    {
+      "id": "c797ee5d-21ad-4b2c-9836-6f6992a75d1b",
+      "image_id": "a1f95e5b-2b6f-4371-90ed-4f197f703834",
+      "bounding_box": {
+        "x": 1257.3737158331608,
+        "y": 550.5319584495378,
+        "width": 15.170049551734708,
+        "height": 19.910690036651804
+      },
+      "tag": "radio",
+      "confidence": 0.92,
+      "annotator": "gpt-4v",
+      "created_at": "2025-07-16T03:54:34.381103",
+      "updated_at": "2025-07-20T08:39:47.381105",
+      "status": "draft",
+      "reviewed_by": null,
+      "reviewed_at": null,
+      "conflicts_with": [],
+      "reasoning": null
+    }
+  ],
+  "llm_model": "gpt-4o",
+  "processing_time": 3.0,
+  "created_at": "2025-07-19T05:26:48.381273"
+}

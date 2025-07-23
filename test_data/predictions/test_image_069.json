@@ -1,0 +1,148 @@
+{
+  "image_id": "test_image_069",
+  "predictions": [
+    {
+      "id": "fbda8413-643f-4f01-93fe-ab3ec0001856",
+      "image_id": "test_image_069",
+      "bounding_box": {
+        "x": 1116.669464152939,
+        "y": 685.061890874698,
+        "width": 119.3311611217128,
+        "height": 248.8237312699224
+      },
+      "tag": "radio",
+      "confidence": 0.61,
+      "annotator": "gpt-4v",
+      "created_at": "2024-01-01T10:05:00.000Z",
+      "updated_at": "2024-01-01T10:05:00.000Z",
+      "status": "draft",
+      "reviewed_by": null,
+      "reviewed_at": null,
+      "conflicts_with": [],
+      "reasoning": null
+    },
+    {
+      "id": "649ebded-7391-4b44-a3f0-988510e1c854",
+      "image_id": "test_image_069",
+      "bounding_box": {
+        "x": 1155.517097953627,
+        "y": 478.70843395769634,
+        "width": 85.0101765686704,
+        "height": 171.93838299453964
+      },
+      "tag": "dropdown",
+      "confidence": 0.83,
+      "annotator": "gpt-4v",
+      "created_at": "2024-01-01T10:05:00.000Z",
+      "updated_at": "2024-01-01T10:05:00.000Z",
+      "status": "draft",
+      "reviewed_by": null,
+      "reviewed_at": null,
+      "conflicts_with": [],
+      "reasoning": null
+    },
+    {
+      "id": "cc987ccc-12a6-4ed6-8c07-5fc50435bc70",
+      "image_id": "test_image_069",
+      "bounding_box": {
+        "x": 886.0513890071935,
+        "y": 845.1691059631892,
+        "width": 314.30807948322445,
+        "height": 169.05127352898236
+      },
+      "tag": "button",
+      "confidence": 0.6,
+      "annotator": "gpt-4v",
+      "created_at": "2024-01-01T10:05:00.000Z",
+      "updated_at": "2024-01-01T10:05:00.000Z",
+      "status": "draft",
+      "reviewed_by": null,
+      "reviewed_at": null,
+      "conflicts_with": [],
+      "reasoning": null
+    },
+    {
+      "id": "93ac3870-b94b-4e8a-bbed-c4039aa1a51f",
+      "image_id": "test_image_069",
+      "bounding_box": {
+        "x": 781.0,
+        "y": 793.0,
+        "width": 167.0,
+        "height": 44.0
+      },
+      "tag": "dropdown",
+      "confidence": 0.68,
+      "annotator": "gpt-4v",
+      "created_at": "2024-01-01T10:05:00.000Z",
+      "updated_at": "2024-01-01T10:05:00.000Z",
+      "status": "draft",
+      "reviewed_by": null,
+      "reviewed_at": null,
+      "conflicts_with": [],
+      "reasoning": null
+    },
+    {
+      "id": "cd09be76-0eab-4600-aeb0-16a0ab2a4ec5",
+      "image_id": "test_image_069",
+      "bounding_box": {
+        "x": 26.0,
+        "y": 514.0,
+        "width": 180.0,
+        "height": 47.0
+      },
+      "tag": "input",
+      "confidence": 0.55,
+      "annotator": "gpt-4v",
+      "created_at": "2024-01-01T10:05:00.000Z",
+      "updated_at": "2024-01-01T10:05:00.000Z",
+      "status": "draft",
+      "reviewed_by": null,
+      "reviewed_at": null,
+      "conflicts_with": [],
+      "reasoning": null
+    },
+    {
+      "id": "7e3d09ce-1a56-4a1b-80e6-5096c597fe10",
+      "image_id": "test_image_069",
+      "bounding_box": {
+        "x": 1297.0,
+        "y": 721.0,
+        "width": 246.0,
+        "height": 135.0
+      },
+      "tag": "radio",
+      "confidence": 0.6,
+      "annotator": "gpt-4v",
+      "created_at": "2024-01-01T10:05:00.000Z",
+      "updated_at": "2024-01-01T10:05:00.000Z",
+      "status": "draft",
+      "reviewed_by": null,
+      "reviewed_at": null,
+      "conflicts_with": [],
+      "reasoning": null
+    },
+    {
+      "id": "8736d1c5-d152-4d63-a85b-1cf5a2fc212a",
+      "image_id": "test_image_069",
+      "bounding_box": {
+        "x": 1589.0,
+        "y": 742.0,
+        "width": 299.0,
+        "height": 120.0
+      },
+      "tag": "input",
+      "confidence": 0.42,
+      "annotator": "gpt-4v",
+      "created_at": "2024-01-01T10:05:00.000Z",
+      "updated_at": "2024-01-01T10:05:00.000Z",
+      "status": "draft",
+      "reviewed_by": null,
+      "reviewed_at": null,
+      "conflicts_with": [],
+      "reasoning": null
+    }
+  ],
+  "llm_model": "gpt-4o-test",
+  "processing_time": 3.065,
+  "created_at": "2024-01-01T10:05:00.000Z"
+}

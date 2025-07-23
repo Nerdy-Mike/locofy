@@ -102,8 +102,32 @@ class ImageViewer:
     ):
         """Add a single annotation to the figure"""
 
-        bbox = annotation["bounding_box"]
-        tag = annotation["tag"]
+        # Validate bounding box data
+        bbox = annotation.get("bounding_box")
+        if not bbox:
+            return  # Skip annotations without bounding box
+
+        # Validate dimensions
+        x = bbox.get("x")
+        y = bbox.get("y")
+        width = bbox.get("width")
+        height = bbox.get("height")
+
+        # Skip annotations with invalid or missing coordinates
+        if any(v is None for v in [x, y, width, height]):
+            return
+
+        try:
+            x, y, width, height = float(x), float(y), float(width), float(height)
+
+            # Skip annotations with invalid dimensions
+            if width <= 0 or height <= 0:
+                return
+
+        except (TypeError, ValueError):
+            return  # Skip annotations with non-numeric coordinates
+
+        tag = annotation.get("tag", "unknown")
         confidence = annotation.get("confidence")
 
         # Get color for this tag type
@@ -117,10 +141,10 @@ class ImageViewer:
         # Add rectangle
         fig.add_shape(
             type="rect",
-            x0=bbox["x"],
-            y0=bbox["y"],
-            x1=bbox["x"] + bbox["width"],
-            y1=bbox["y"] + bbox["height"],
+            x0=x,
+            y0=y,
+            x1=x + width,
+            y1=y + height,
             line=line_style,
             fillcolor=color,
             opacity=0.1 if solid else 0.05,
@@ -133,12 +157,10 @@ class ImageViewer:
                 label_text += f" ({confidence:.2f})"
 
             # Position label above or below rectangle depending on position
-            label_y = (
-                bbox["y"] - 15 if bbox["y"] > 20 else bbox["y"] + bbox["height"] + 15
-            )
+            label_y = y - 15 if y > 20 else y + height + 15
 
             fig.add_annotation(
-                x=bbox["x"],
+                x=x,
                 y=label_y,
                 text=label_text,
                 showarrow=False,

@@ -1,0 +1,88 @@
+{
+  "image_id": "39543cbd-21a6-4023-82b6-e35182d92d6a",
+  "predictions": [
+    {
+      "id": "91d411be-32be-4d71-a201-d0b84e5a826f",
+      "image_id": "39543cbd-21a6-4023-82b6-e35182d92d6a",
+      "bounding_box": {
+        "x": 259.5402733547321,
+        "y": 143.56239599381146,
+        "width": 26.874453981602507,
+        "height": 24.6349161498023
+      },
+      "tag": "radio",
+      "confidence": 0.75,
+      "annotator": "gpt-4v",
+      "created_at": "2025-06-27T19:27:16.370189",
+      "updated_at": "2025-06-25T13:37:12.370191",
+      "status": "draft",
+      "reviewed_by": null,
+      "reviewed_at": null,
+      "conflicts_with": [],
+      "reasoning": null
+    },
+    {
+      "id": "589580d8-8406-4b54-b0e7-86d8ee745fa5",
+      "image_id": "39543cbd-21a6-4023-82b6-e35182d92d6a",
+      "bounding_box": {
+        "x": 158.0363502041269,
+        "y": 834.5955907567757,
+        "width": 22.80411333081035,
+        "height": 19.155455197880695
+      },
+      "tag": "radio",
+      "confidence": 0.81,
+      "annotator": "gpt-4v",
+      "created_at": "2025-07-09T00:09:04.370198",
+      "updated_at": "2025-07-21T03:42:54.370200",
+      "status": "draft",
+      "reviewed_by": null,
+      "reviewed_at": null,
+      "conflicts_with": [],
+      "reasoning": null
+    },
+    {
+      "id": "75730256-d55b-4be6-a357-ef193c0f092b",
+      "image_id": "39543cbd-21a6-4023-82b6-e35182d92d6a",
+      "bounding_box": {
+        "x": 441.0,
+        "y": 137.0,
+        "width": 182.0,
+        "height": 36.0
+      },
+      "tag": "dropdown",
+      "confidence": 0.82,
+      "annotator": "gpt-4v",
+      "created_at": "2025-07-10T20:49:21.370216",
+      "updated_at": "2025-07-12T16:29:09.370218",
+      "status": "draft",
+      "reviewed_by": null,
+      "reviewed_at": null,
+      "conflicts_with": [],
+      "reasoning": null
+    },
+    {
+      "id": "bd255ad8-363b-4837-b494-9289bdfc42d9",
+      "image_id": "39543cbd-21a6-4023-82b6-e35182d92d6a",
+      "bounding_box": {
+        "x": 199.0,
+        "y": 371.0,
+        "width": 19.0,
+        "height": 20.0
+      },
+      "tag": "radio",
+      "confidence": 0.74,
+      "annotator": "gpt-4v",
+      "created_at": "2025-06-26T16:19:53.370224",
+      "updated_at": "2025-07-11T20:47:23.370226",
+      "status": "draft",
+      "reviewed_by": null,
+      "reviewed_at": null,
+      "conflicts_with": [],
+      "reasoning": null
+    }
+  ],
+  "llm_model": "gpt-4o",
+  "processing_time": 5.03,
+  "created_at": "2025-07-19T19:17:26.370324"
+}

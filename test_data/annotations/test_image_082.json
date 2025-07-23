@@ -1,0 +1,22 @@
+[
+  {
+    "id": "f5164f36-bde8-4195-aa2f-9a7964845f6a",
+    "image_id": "test_image_082",
+    "bounding_box": {
+      "x": 308.0,
+      "y": 15.0,
+      "width": 139.0,
+      "height": 66.0
+    },
+    "tag": "dropdown",
+    "confidence": null,
+    "annotator": "human_annotator",
+    "created_at": "2024-01-01T10:00:00.000Z",
+    "updated_at": "2024-01-01T10:00:00.000Z",
+    "status": "active",
+    "reviewed_by": null,
+    "reviewed_at": null,
+    "conflicts_with": [],
+    "reasoning": null
+  }
+]

@@ -1,0 +1,68 @@
+{
+  "image_id": "a14954f8-15ea-4cfc-989f-6184081df486",
+  "predictions": [
+    {
+      "id": "e403e77f-a03b-4f65-b8ce-763d1bd9ba1d",
+      "image_id": "a14954f8-15ea-4cfc-989f-6184081df486",
+      "bounding_box": {
+        "x": 8.588659241276464,
+        "y": 41.975920319457444,
+        "width": 209.68397484205323,
+        "height": 38.79153534577985
+      },
+      "tag": "input",
+      "confidence": 0.73,
+      "annotator": "gpt-4v",
+      "created_at": "2025-06-27T22:40:25.375161",
+      "updated_at": "2025-07-15T10:06:44.375164",
+      "status": "draft",
+      "reviewed_by": null,
+      "reviewed_at": null,
+      "conflicts_with": [],
+      "reasoning": null
+    },
+    {
+      "id": "fee57acf-3773-4b3b-aaf2-7b876a38eb02",
+      "image_id": "a14954f8-15ea-4cfc-989f-6184081df486",
+      "bounding_box": {
+        "x": 226.5988545126997,
+        "y": 6.0794751264275515,
+        "width": 99.83622077608908,
+        "height": 26.83769375701319
+      },
+      "tag": "button",
+      "confidence": 0.7,
+      "annotator": "gpt-4v",
+      "created_at": "2025-07-13T21:04:59.375171",
+      "updated_at": "2025-07-02T22:22:43.375174",
+      "status": "draft",
+      "reviewed_by": null,
+      "reviewed_at": null,
+      "conflicts_with": [],
+      "reasoning": null
+    },
+    {
+      "id": "41babbbd-a367-4d37-a439-98050e167328",
+      "image_id": "a14954f8-15ea-4cfc-989f-6184081df486",
+      "bounding_box": {
+        "x": 59.635966612823815,
+        "y": 91.54082567004129,
+        "width": 209.5849738483928,
+        "height": 39.96736710597258
+      },
+      "tag": "input",
+      "confidence": 0.73,
+      "annotator": "gpt-4v",
+      "created_at": "2025-07-10T14:35:54.375180",
+      "updated_at": "2025-07-05T06:23:07.375183",
+      "status": "draft",
+      "reviewed_by": null,
+      "reviewed_at": null,
+      "conflicts_with": [],
+      "reasoning": null
+    }
+  ],
+  "llm_model": "gpt-4o",
+  "processing_time": 5.85,
+  "created_at": "2025-06-30T01:05:48.375332"
+}

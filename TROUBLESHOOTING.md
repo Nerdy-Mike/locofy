@@ -59,7 +59,64 @@ docker-compose up --build
 - Rebuild containers: `docker-compose down && docker-compose up --build`
 - Check logs: `docker-compose logs ui-labeling-api`
 
-### 2. Frontend Can't Connect to Backend
+### 2. AI Predictions Not Rendering or Appearing Off-Screen
+
+**Issue**: AI predictions don't appear in the enhanced annotation viewer, or they appear completely off-screen/out-of-bounds.
+
+**Symptoms**:
+- Manual annotations render correctly (solid lines)
+- AI predictions don't show up or appear way outside the image bounds
+- Coordinate diagnostic shows predictions with coordinates larger than image dimensions
+
+**Root Cause**: Coordinate system misalignment between AI predictions and manual annotations due to image resizing during LLM processing.
+
+**Solution Applied**: 
+- Enhanced coordinate validation in both LLM and MCP services
+- Added bounds checking before scaling coordinates back to original image dimensions
+- Improved LLM prompts with precise coordinate validation instructions
+
+**Verification**:
+```bash
+# Create and run coordinate diagnostic
+python3 -c "
+import json
+from pathlib import Path
+
+# Load and check existing data
+image_id = '407d7021-3260-4be1-a8a6-10320e1e792a'  # Replace with your image ID
+metadata_file = Path(f'data/metadata/{image_id}.json')
+predictions_file = Path(f'data/predictions/{image_id}.json')
+
+if metadata_file.exists() and predictions_file.exists():
+    with open(metadata_file) as f:
+        metadata = json.load(f)
+    with open(predictions_file) as f:
+        predictions = json.load(f)
+    
+    image_width = metadata['width']
+    image_height = metadata['height']
+    
+    print(f'Image: {image_width}×{image_height}')
+    
+    for i, pred in enumerate(predictions.get('predictions', [])[:3]):
+        bbox = pred['bounding_box']
+        x, y, w, h = bbox['x'], bbox['y'], bbox['width'], bbox['height']
+        
+        if (x >= 0 and y >= 0 and x + w <= image_width and y + h <= image_height):
+            print(f'✅ Prediction {i+1}: ({x:.1f}, {y:.1f}) {w:.1f}×{h:.1f} - Within bounds')
+        else:
+            print(f'❌ Prediction {i+1}: ({x:.1f}, {y:.1f}) {w:.1f}×{h:.1f} - OUT OF BOUNDS')
+else:
+    print('No data found - upload an image and generate predictions first')
+"
+```
+
+**Prevention**:
+- The coordinate validation is now built into both services
+- Enhanced logging will warn if out-of-bounds coordinates are detected and clamped
+- Regular testing of the enhanced annotation viewer ensures rendering works correctly
+
+### 3. Frontend Can't Connect to Backend
 **Symptoms:**
 - "Cannot connect to the API" message in Streamlit
 - Connection refused errors

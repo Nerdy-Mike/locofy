@@ -1,0 +1,148 @@
+{
+  "image_id": "test_image_035",
+  "predictions": [
+    {
+      "id": "47ab33c5-5ea5-409d-b803-f0e1c4b7af5a",
+      "image_id": "test_image_035",
+      "bounding_box": {
+        "x": 1217.3889981650875,
+        "y": 701.6516279918237,
+        "width": 130.6547500710525,
+        "height": 87.69131009319302
+      },
+      "tag": "radio",
+      "confidence": 0.43,
+      "annotator": "gpt-4v",
+      "created_at": "2024-01-01T10:05:00.000Z",
+      "updated_at": "2024-01-01T10:05:00.000Z",
+      "status": "draft",
+      "reviewed_by": null,
+      "reviewed_at": null,
+      "conflicts_with": [],
+      "reasoning": null
+    },
+    {
+      "id": "98cf1984-3f49-4853-8fac-e23980123b80",
+      "image_id": "test_image_035",
+      "bounding_box": {
+        "x": 1601.3742171780304,
+        "y": 770.3729541643208,
+        "width": 210.45174195762806,
+        "height": 221.56130741502864
+      },
+      "tag": "input",
+      "confidence": 0.24,
+      "annotator": "gpt-4v",
+      "created_at": "2024-01-01T10:05:00.000Z",
+      "updated_at": "2024-01-01T10:05:00.000Z",
+      "status": "draft",
+      "reviewed_by": null,
+      "reviewed_at": null,
+      "conflicts_with": [],
+      "reasoning": null
+    },
+    {
+      "id": "a12f4f21-ad71-4c38-b270-83a5dee2d4ca",
+      "image_id": "test_image_035",
+      "bounding_box": {
+        "x": 1337.0,
+        "y": 487.0,
+        "width": 100.0,
+        "height": 228.0
+      },
+      "tag": "dropdown",
+      "confidence": 0.36,
+      "annotator": "gpt-4v",
+      "created_at": "2024-01-01T10:05:00.000Z",
+      "updated_at": "2024-01-01T10:05:00.000Z",
+      "status": "draft",
+      "reviewed_by": null,
+      "reviewed_at": null,
+      "conflicts_with": [],
+      "reasoning": null
+    },
+    {
+      "id": "533b3096-d1dd-4bcd-8662-57bacda1e205",
+      "image_id": "test_image_035",
+      "bounding_box": {
+        "x": 584.0,
+        "y": 661.0,
+        "width": 167.0,
+        "height": 184.0
+      },
+      "tag": "button",
+      "confidence": 0.46,
+      "annotator": "gpt-4v",
+      "created_at": "2024-01-01T10:05:00.000Z",
+      "updated_at": "2024-01-01T10:05:00.000Z",
+      "status": "draft",
+      "reviewed_by": null,
+      "reviewed_at": null,
+      "conflicts_with": [],
+      "reasoning": null
+    },
+    {
+      "id": "e256ab19-c437-4d70-b975-2ce742a5dc85",
+      "image_id": "test_image_035",
+      "bounding_box": {
+        "x": 1095.0,
+        "y": 756.0,
+        "width": 65.0,
+        "height": 138.0
+      },
+      "tag": "button",
+      "confidence": 0.47,
+      "annotator": "gpt-4v",
+      "created_at": "2024-01-01T10:05:00.000Z",
+      "updated_at": "2024-01-01T10:05:00.000Z",
+      "status": "draft",
+      "reviewed_by": null,
+      "reviewed_at": null,
+      "conflicts_with": [],
+      "reasoning": null
+    },
+    {
+      "id": "f4bb478a-39f3-4d3e-9559-6dd7688241f6",
+      "image_id": "test_image_035",
+      "bounding_box": {
+        "x": 1806.0,
+        "y": 180.0,
+        "width": 109.0,
+        "height": 233.0
+      },
+      "tag": "button",
+      "confidence": 0.5,
+      "annotator": "gpt-4v",
+      "created_at": "2024-01-01T10:05:00.000Z",
+      "updated_at": "2024-01-01T10:05:00.000Z",
+      "status": "draft",
+      "reviewed_by": null,
+      "reviewed_at": null,
+      "conflicts_with": [],
+      "reasoning": null
+    },
+    {
+      "id": "7f55d6b8-e388-4c11-a6e5-916a4485c48a",
+      "image_id": "test_image_035",
+      "bounding_box": {
+        "x": 381.0,
+        "y": 766.0,
+        "width": 223.0,
+        "height": 273.0
+      },
+      "tag": "radio",
+      "confidence": 0.45,
+      "annotator": "gpt-4v",
+      "created_at": "2024-01-01T10:05:00.000Z",
+      "updated_at": "2024-01-01T10:05:00.000Z",
+      "status": "draft",
+      "reviewed_by": null,
+      "reviewed_at": null,
+      "conflicts_with": [],
+      "reasoning": null
+    }
+  ],
+  "llm_model": "gpt-4o-test",
+  "processing_time": 2.056,
+  "created_at": "2024-01-01T10:05:00.000Z"
+}

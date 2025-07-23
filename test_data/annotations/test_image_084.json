@@ -1,0 +1,162 @@
+[
+  {
+    "id": "048fe868-2340-46d1-beae-ff374abd9320",
+    "image_id": "test_image_084",
+    "bounding_box": {
+      "x": 1578.0,
+      "y": 91.0,
+      "width": 99.0,
+      "height": 210.0
+    },
+    "tag": "input",
+    "confidence": null,
+    "annotator": "human_annotator",
+    "created_at": "2024-01-01T10:00:00.000Z",
+    "updated_at": "2024-01-01T10:00:00.000Z",
+    "status": "active",
+    "reviewed_by": null,
+    "reviewed_at": null,
+    "conflicts_with": [],
+    "reasoning": null
+  },
+  {
+    "id": "9a644a8f-ef2b-4eee-86de-1f47b0874a42",
+    "image_id": "test_image_084",
+    "bounding_box": {
+      "x": 187.0,
+      "y": 702.0,
+      "width": 100.0,
+      "height": 275.0
+    },
+    "tag": "radio",
+    "confidence": null,
+    "annotator": "human_annotator",
+    "created_at": "2024-01-01T10:00:00.000Z",
+    "updated_at": "2024-01-01T10:00:00.000Z",
+    "status": "active",
+    "reviewed_by": null,
+    "reviewed_at": null,
+    "conflicts_with": [],
+    "reasoning": null
+  },
+  {
+    "id": "8eb02beb-4ea4-430f-a11d-0ee4af782a1e",
+    "image_id": "test_image_084",
+    "bounding_box": {
+      "x": 728.0,
+      "y": 315.0,
+      "width": 50.0,
+      "height": 50.0
+    },
+    "tag": "button",
+    "confidence": null,
+    "annotator": "human_annotator",
+    "created_at": "2024-01-01T10:00:00.000Z",
+    "updated_at": "2024-01-01T10:00:00.000Z",
+    "status": "active",
+    "reviewed_by": null,
+    "reviewed_at": null,
+    "conflicts_with": [],
+    "reasoning": null
+  },
+  {
+    "id": "bfa5e047-b0fe-444a-9584-d38190c4304c",
+    "image_id": "test_image_084",
+    "bounding_box": {
+      "x": 476.0,
+      "y": 324.0,
+      "width": 84.0,
+      "height": 269.0
+    },
+    "tag": "radio",
+    "confidence": null,
+    "annotator": "human_annotator",
+    "created_at": "2024-01-01T10:00:00.000Z",
+    "updated_at": "2024-01-01T10:00:00.000Z",
+    "status": "active",
+    "reviewed_by": null,
+    "reviewed_at": null,
+    "conflicts_with": [],
+    "reasoning": null
+  },
+  {
+    "id": "21fb4a94-3789-4217-a8f8-c27d24dc4c1d",
+    "image_id": "test_image_084",
+    "bounding_box": {
+      "x": 43.0,
+      "y": 705.0,
+      "width": 244.0,
+      "height": 118.0
+    },
+    "tag": "dropdown",
+    "confidence": null,
+    "annotator": "human_annotator",
+    "created_at": "2024-01-01T10:00:00.000Z",
+    "updated_at": "2024-01-01T10:00:00.000Z",
+    "status": "active",
+    "reviewed_by": null,
+    "reviewed_at": null,
+    "conflicts_with": [],
+    "reasoning": null
+  },
+  {
+    "id": "7f2a37aa-9d6c-48bf-8e38-e3c693cd3823",
+    "image_id": "test_image_084",
+    "bounding_box": {
+      "x": 513.0,
+      "y": 920.0,
+      "width": 203.0,
+      "height": 88.0
+    },
+    "tag": "button",
+    "confidence": null,
+    "annotator": "human_annotator",
+    "created_at": "2024-01-01T10:00:00.000Z",
+    "updated_at": "2024-01-01T10:00:00.000Z",
+    "status": "active",
+    "reviewed_by": null,
+    "reviewed_at": null,
+    "conflicts_with": [],
+    "reasoning": null
+  },
+  {
+    "id": "3769a4b4-4004-4d46-8870-05248886e5bd",
+    "image_id": "test_image_084",
+    "bounding_box": {
+      "x": 1144.0,
+      "y": 301.0,
+      "width": 268.0,
+      "height": 244.0
+    },
+    "tag": "dropdown",
+    "confidence": null,
+    "annotator": "human_annotator",
+    "created_at": "2024-01-01T10:00:00.000Z",
+    "updated_at": "2024-01-01T10:00:00.000Z",
+    "status": "active",
+    "reviewed_by": null,
+    "reviewed_at": null,
+    "conflicts_with": [],
+    "reasoning": null
+  },
+  {
+    "id": "9e908787-f84a-42c5-954d-7d925a315d5d",
+    "image_id": "test_image_084",
+    "bounding_box": {
+      "x": 1113.0,
+      "y": 356.0,
+      "width": 117.0,
+      "height": 115.0
+    },
+    "tag": "radio",
+    "confidence": null,
+    "annotator": "human_annotator",
+    "created_at": "2024-01-01T10:00:00.000Z",
+    "updated_at": "2024-01-01T10:00:00.000Z",
+    "status": "active",
+    "reviewed_by": null,
+    "reviewed_at": null,
+    "conflicts_with": [],
+    "reasoning": null
+  }
+]

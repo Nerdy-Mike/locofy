@@ -1,0 +1,68 @@
+{
+  "image_id": "a8e496cb-38c6-4f80-a537-000c5d53b2d0",
+  "predictions": [
+    {
+      "id": "c31f2629-7134-4020-ba39-49e560f18f5f",
+      "image_id": "a8e496cb-38c6-4f80-a537-000c5d53b2d0",
+      "bounding_box": {
+        "x": 23.184355019139606,
+        "y": 743.4252362170324,
+        "width": 166.99474796537123,
+        "height": 45.044635964343556
+      },
+      "tag": "button",
+      "confidence": 0.88,
+      "annotator": "gpt-4v",
+      "created_at": "2025-07-05T03:03:15.699551",
+      "updated_at": "2025-07-07T13:30:54.699553",
+      "status": "draft",
+      "reviewed_by": null,
+      "reviewed_at": null,
+      "conflicts_with": [],
+      "reasoning": null
+    },
+    {
+      "id": "ab01508f-f7bf-4b1e-a668-dc49c2b190a8",
+      "image_id": "a8e496cb-38c6-4f80-a537-000c5d53b2d0",
+      "bounding_box": {
+        "x": 31.015648209699457,
+        "y": 447.9174945628204,
+        "width": 137.97150121477256,
+        "height": 40.880444804377056
+      },
+      "tag": "button",
+      "confidence": 0.91,
+      "annotator": "gpt-4v",
+      "created_at": "2025-06-28T19:25:25.699559",
+      "updated_at": "2025-07-04T14:43:16.699561",
+      "status": "draft",
+      "reviewed_by": null,
+      "reviewed_at": null,
+      "conflicts_with": [],
+      "reasoning": null
+    },
+    {
+      "id": "d9e29521-0fec-4ad0-9ec7-80951824f48c",
+      "image_id": "a8e496cb-38c6-4f80-a537-000c5d53b2d0",
+      "bounding_box": {
+        "x": 109.47783062363676,
+        "y": 67.94629512319378,
+        "width": 186.8163118825334,
+        "height": 36.26434289484472
+      },
+      "tag": "input",
+      "confidence": 0.97,
+      "annotator": "gpt-4v",
+      "created_at": "2025-07-06T13:45:52.699589",
+      "updated_at": "2025-06-29T06:29:40.699591",
+      "status": "draft",
+      "reviewed_by": null,
+      "reviewed_at": null,
+      "conflicts_with": [],
+      "reasoning": null
+    }
+  ],
+  "llm_model": "gpt-4o",
+  "processing_time": 4.97,
+  "created_at": "2025-07-08T18:49:27.699754"
+}

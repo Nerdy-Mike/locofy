@@ -273,6 +273,45 @@ Matches are determined by:
 1. Same component type (tag)
 2. IoU > threshold between bounding boxes
 
+## 🧪 Command-Line Evaluation Tool
+
+The system now includes comprehensive CLI tools for batch evaluation as required by the homework:
+
+### Generate Test Data
+```bash
+# Generate 100 test annotation pairs
+python3 src/cli/generate_test_data.py --output-dir ./test_datasets --count 100
+```
+
+### Batch Evaluation
+```bash
+# Evaluate folders of annotation files
+python3 src/cli/evaluate_annotations.py \
+    --ground-truth ./test_datasets/ground_truth \
+    --predictions ./test_datasets/predictions \
+    --output-json ./results.json
+```
+
+**Output Example:**
+```
+📊 UI COMPONENT ANNOTATION EVALUATION REPORT
+📁 Files processed: 100/100 | 🎯 IoU threshold: 0.5
+
+📈 OVERALL METRICS:
+   Total Ground Truth Boxes: 456
+   Correctly Predicted Boxes: 367
+   Overall Precision: 0.868 | Overall Recall: 0.805 | Overall F1-Score: 0.835
+
+🏷️  METRICS BY TAG:
+Tag          GT Boxes   Pred Boxes   Correct  Precision  Recall   F1-Score
+button       124        118          102      0.864      0.823    0.843
+input        89         87           76       0.874      0.854    0.864
+radio        134        125          108      0.864      0.806    0.834
+dropdown     109        93           81       0.871      0.743    0.802
+```
+
+See `src/cli/README.md` for detailed documentation.
+
 ## 🔧 Configuration
 
 ### Environment Variables

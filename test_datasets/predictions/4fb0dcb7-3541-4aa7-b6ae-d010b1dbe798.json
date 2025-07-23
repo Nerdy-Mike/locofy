@@ -1,0 +1,108 @@
+{
+  "image_id": "4fb0dcb7-3541-4aa7-b6ae-d010b1dbe798",
+  "predictions": [
+    {
+      "id": "49e2b002-07d5-4716-a036-b4f1233f18a0",
+      "image_id": "4fb0dcb7-3541-4aa7-b6ae-d010b1dbe798",
+      "bounding_box": {
+        "x": 241.4484759113909,
+        "y": 362.06722171457545,
+        "width": 143.6224127751356,
+        "height": 35.627265184529755
+      },
+      "tag": "dropdown",
+      "confidence": 0.92,
+      "annotator": "gpt-4v",
+      "created_at": "2025-07-14T09:05:42.719999",
+      "updated_at": "2025-07-04T09:04:44.720001",
+      "status": "draft",
+      "reviewed_by": null,
+      "reviewed_at": null,
+      "conflicts_with": [],
+      "reasoning": null
+    },
+    {
+      "id": "1c991558-a8a8-4085-a92b-db607d484409",
+      "image_id": "4fb0dcb7-3541-4aa7-b6ae-d010b1dbe798",
+      "bounding_box": {
+        "x": 95.91271187532492,
+        "y": 675.2913794399802,
+        "width": 333.073238960181,
+        "height": 44.485809313174855
+      },
+      "tag": "input",
+      "confidence": 0.73,
+      "annotator": "gpt-4v",
+      "created_at": "2025-07-15T20:27:47.720008",
+      "updated_at": "2025-06-29T11:28:11.720010",
+      "status": "draft",
+      "reviewed_by": null,
+      "reviewed_at": null,
+      "conflicts_with": [],
+      "reasoning": null
+    },
+    {
+      "id": "82e0b3b9-9761-4f33-8c3d-594565175bd5",
+      "image_id": "4fb0dcb7-3541-4aa7-b6ae-d010b1dbe798",
+      "bounding_box": {
+        "x": 240.18365114601934,
+        "y": 104.69724707406374,
+        "width": 130.40695683842003,
+        "height": 30.804792953957488
+      },
+      "tag": "button",
+      "confidence": 0.87,
+      "annotator": "gpt-4v",
+      "created_at": "2025-07-13T07:18:57.720027",
+      "updated_at": "2025-07-17T01:53:26.720029",
+      "status": "draft",
+      "reviewed_by": null,
+      "reviewed_at": null,
+      "conflicts_with": [],
+      "reasoning": null
+    },
+    {
+      "id": "779563e7-9bd1-4c3a-8c26-dcc537089d78",
+      "image_id": "4fb0dcb7-3541-4aa7-b6ae-d010b1dbe798",
+      "bounding_box": {
+        "x": 12.93509029351282,
+        "y": 370.58723106326033,
+        "width": 23.990805794912806,
+        "height": 21.809823449920735
+      },
+      "tag": "radio",
+      "confidence": 0.76,
+      "annotator": "gpt-4v",
+      "created_at": "2025-07-05T18:31:21.720036",
+      "updated_at": "2025-07-10T10:38:43.720037",
+      "status": "draft",
+      "reviewed_by": null,
+      "reviewed_at": null,
+      "conflicts_with": [],
+      "reasoning": null
+    },
+    {
+      "id": "b640a7ae-db66-4225-8186-5b0b585fdb3a",
+      "image_id": "4fb0dcb7-3541-4aa7-b6ae-d010b1dbe798",
+      "bounding_box": {
+        "x": 104.05309156791755,
+        "y": 490.13490829521453,
+        "width": 179.3582391755147,
+        "height": 28.56022916807559
+      },
+      "tag": "dropdown",
+      "confidence": 0.8,
+      "annotator": "gpt-4v",
+      "created_at": "2025-07-05T15:02:37.720053",
+      "updated_at": "2025-07-09T15:09:56.720055",
+      "status": "draft",
+      "reviewed_by": null,
+      "reviewed_at": null,
+      "conflicts_with": [],
+      "reasoning": null
+    }
+  ],
+  "llm_model": "gpt-4o",
+  "processing_time": 3.47,
+  "created_at": "2025-07-16T02:31:01.720215"
+}

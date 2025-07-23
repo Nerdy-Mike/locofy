@@ -1,0 +1,102 @@
+[
+  {
+    "id": "4c322bf4-abc0-48fc-b851-0e50729301ce",
+    "image_id": "ebf5a313-6450-4327-9798-e2bf66fb3b66",
+    "bounding_box": {
+      "x": 165.0,
+      "y": 626.0,
+      "width": 235.0,
+      "height": 35.0
+    },
+    "tag": "input",
+    "confidence": null,
+    "annotator": "human_annotator",
+    "created_at": "2025-07-04T05:07:20.718487",
+    "updated_at": "2025-06-27T10:19:27.718490",
+    "status": "active",
+    "reviewed_by": null,
+    "reviewed_at": null,
+    "conflicts_with": [],
+    "reasoning": null
+  },
+  {
+    "id": "8b2b5ad2-908e-4f7b-a3cf-bf8bdb9fbd93",
+    "image_id": "ebf5a313-6450-4327-9798-e2bf66fb3b66",
+    "bounding_box": {
+      "x": 12.0,
+      "y": 410.0,
+      "width": 180.0,
+      "height": 39.0
+    },
+    "tag": "dropdown",
+    "confidence": null,
+    "annotator": "human_annotator",
+    "created_at": "2025-07-13T22:22:04.718496",
+    "updated_at": "2025-07-22T06:10:02.718498",
+    "status": "active",
+    "reviewed_by": null,
+    "reviewed_at": null,
+    "conflicts_with": [],
+    "reasoning": null
+  },
+  {
+    "id": "f6cd852a-5485-4839-a1be-3dfbb938f865",
+    "image_id": "ebf5a313-6450-4327-9798-e2bf66fb3b66",
+    "bounding_box": {
+      "x": 290.0,
+      "y": 120.0,
+      "width": 20.0,
+      "height": 23.0
+    },
+    "tag": "radio",
+    "confidence": null,
+    "annotator": "human_annotator",
+    "created_at": "2025-06-23T19:06:15.718504",
+    "updated_at": "2025-07-18T15:18:16.718506",
+    "status": "active",
+    "reviewed_by": null,
+    "reviewed_at": null,
+    "conflicts_with": [],
+    "reasoning": null
+  },
+  {
+    "id": "37da6b2e-7b18-406f-9731-8704b427e446",
+    "image_id": "ebf5a313-6450-4327-9798-e2bf66fb3b66",
+    "bounding_box": {
+      "x": 57.0,
+      "y": 730.0,
+      "width": 248.0,
+      "height": 37.0
+    },
+    "tag": "dropdown",
+    "confidence": null,
+    "annotator": "human_annotator",
+    "created_at": "2025-07-02T23:20:26.718512",
+    "updated_at": "2025-07-02T08:39:33.718514",
+    "status": "active",
+    "reviewed_by": null,
+    "reviewed_at": null,
+    "conflicts_with": [],
+    "reasoning": null
+  },
+  {
+    "id": "bb4a04ee-2b54-4e33-860b-3682e259504f",
+    "image_id": "ebf5a313-6450-4327-9798-e2bf66fb3b66",
+    "bounding_box": {
+      "x": 220.0,
+      "y": 876.0,
+      "width": 19.0,
+      "height": 17.0
+    },
+    "tag": "radio",
+    "confidence": null,
+    "annotator": "human_annotator",
+    "created_at": "2025-07-03T03:22:21.718521",
+    "updated_at": "2025-07-22T05:48:22.718523",
+    "status": "active",
+    "reviewed_by": null,
+    "reviewed_at": null,
+    "conflicts_with": [],
+    "reasoning": null
+  }
+]

@@ -15,7 +15,16 @@ from components.annotation_renderer import (
 )
 
 import streamlit as st
-from utils.api_client import UILabelingAPIClient
+
+# Try multiple import paths for API client to handle different environments
+try:
+    from utils.api_client import UILabelingAPIClient
+except ImportError:
+    try:
+        from frontend.utils.api_client import UILabelingAPIClient
+    except ImportError:
+        st.error("❌ Could not import UILabelingAPIClient in Enhanced Annotation Viewer")
+        st.stop()
 
 
 def show_enhanced_annotation_viewer():

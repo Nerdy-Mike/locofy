@@ -1,0 +1,82 @@
+[
+  {
+    "id": "fe50fae8-78e3-45ea-90dc-b7f20d6a76b1",
+    "image_id": "test_image_079",
+    "bounding_box": {
+      "x": 747.0,
+      "y": 410.0,
+      "width": 234.0,
+      "height": 210.0
+    },
+    "tag": "radio",
+    "confidence": null,
+    "annotator": "human_annotator",
+    "created_at": "2024-01-01T10:00:00.000Z",
+    "updated_at": "2024-01-01T10:00:00.000Z",
+    "status": "active",
+    "reviewed_by": null,
+    "reviewed_at": null,
+    "conflicts_with": [],
+    "reasoning": null
+  },
+  {
+    "id": "6b398561-ea1e-4f7e-90c5-8e97a9bf626a",
+    "image_id": "test_image_079",
+    "bounding_box": {
+      "x": 1170.0,
+      "y": 134.0,
+      "width": 250.0,
+      "height": 112.0
+    },
+    "tag": "input",
+    "confidence": null,
+    "annotator": "human_annotator",
+    "created_at": "2024-01-01T10:00:00.000Z",
+    "updated_at": "2024-01-01T10:00:00.000Z",
+    "status": "active",
+    "reviewed_by": null,
+    "reviewed_at": null,
+    "conflicts_with": [],
+    "reasoning": null
+  },
+  {
+    "id": "115d7a3a-8b50-4249-9ebc-2ce9dec91324",
+    "image_id": "test_image_079",
+    "bounding_box": {
+      "x": 1646.0,
+      "y": 241.0,
+      "width": 71.0,
+      "height": 158.0
+    },
+    "tag": "dropdown",
+    "confidence": null,
+    "annotator": "human_annotator",
+    "created_at": "2024-01-01T10:00:00.000Z",
+    "updated_at": "2024-01-01T10:00:00.000Z",
+    "status": "active",
+    "reviewed_by": null,
+    "reviewed_at": null,
+    "conflicts_with": [],
+    "reasoning": null
+  },
+  {
+    "id": "bf8f40f5-bac4-4b83-a4b1-79d04d25d5e3",
+    "image_id": "test_image_079",
+    "bounding_box": {
+      "x": 298.0,
+      "y": 819.0,
+      "width": 215.0,
+      "height": 120.0
+    },
+    "tag": "input",
+    "confidence": null,
+    "annotator": "human_annotator",
+    "created_at": "2024-01-01T10:00:00.000Z",
+    "updated_at": "2024-01-01T10:00:00.000Z",
+    "status": "active",
+    "reviewed_by": null,
+    "reviewed_at": null,
+    "conflicts_with": [],
+    "reasoning": null
+  }
+]

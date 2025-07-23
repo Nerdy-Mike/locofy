@@ -1,0 +1,68 @@
+{
+  "image_id": "eedb736e-8484-4d68-b143-32f9ce523863",
+  "predictions": [
+    {
+      "id": "a22dba1e-ada2-42bf-9662-08481dfde515",
+      "image_id": "eedb736e-8484-4d68-b143-32f9ce523863",
+      "bounding_box": {
+        "x": 8.588659241276464,
+        "y": 41.975920319457444,
+        "width": 209.68397484205323,
+        "height": 38.79153534577985
+      },
+      "tag": "input",
+      "confidence": 0.73,
+      "annotator": "gpt-4v",
+      "created_at": "2025-06-27T22:40:19.699887",
+      "updated_at": "2025-07-15T10:06:38.699889",
+      "status": "draft",
+      "reviewed_by": null,
+      "reviewed_at": null,
+      "conflicts_with": [],
+      "reasoning": null
+    },
+    {
+      "id": "1c1e172b-f2f4-43a0-95f6-2bddee49b911",
+      "image_id": "eedb736e-8484-4d68-b143-32f9ce523863",
+      "bounding_box": {
+        "x": 226.5988545126997,
+        "y": 6.0794751264275515,
+        "width": 99.83622077608908,
+        "height": 26.83769375701319
+      },
+      "tag": "button",
+      "confidence": 0.7,
+      "annotator": "gpt-4v",
+      "created_at": "2025-07-13T21:04:53.699896",
+      "updated_at": "2025-07-02T22:22:37.699898",
+      "status": "draft",
+      "reviewed_by": null,
+      "reviewed_at": null,
+      "conflicts_with": [],
+      "reasoning": null
+    },
+    {
+      "id": "238757a1-1367-4f6d-bd79-ed8d1ca2aea3",
+      "image_id": "eedb736e-8484-4d68-b143-32f9ce523863",
+      "bounding_box": {
+        "x": 59.635966612823815,
+        "y": 91.54082567004129,
+        "width": 209.5849738483928,
+        "height": 39.96736710597258
+      },
+      "tag": "input",
+      "confidence": 0.73,
+      "annotator": "gpt-4v",
+      "created_at": "2025-07-10T14:35:48.699904",
+      "updated_at": "2025-07-05T06:23:01.699906",
+      "status": "draft",
+      "reviewed_by": null,
+      "reviewed_at": null,
+      "conflicts_with": [],
+      "reasoning": null
+    }
+  ],
+  "llm_model": "gpt-4o",
+  "processing_time": 5.85,
+  "created_at": "2025-06-30T01:05:42.700057"
+}

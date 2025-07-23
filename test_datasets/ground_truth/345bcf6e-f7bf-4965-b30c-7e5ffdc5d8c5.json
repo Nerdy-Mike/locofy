@@ -1,0 +1,162 @@
+[
+  {
+    "id": "4f3338ae-3058-49a9-9318-2f543d8b0f8a",
+    "image_id": "345bcf6e-f7bf-4965-b30c-7e5ffdc5d8c5",
+    "bounding_box": {
+      "x": 217.0,
+      "y": 645.0,
+      "width": 193.0,
+      "height": 42.0
+    },
+    "tag": "button",
+    "confidence": null,
+    "annotator": "human_annotator",
+    "created_at": "2025-07-18T05:01:03.384023",
+    "updated_at": "2025-07-19T00:47:44.384025",
+    "status": "active",
+    "reviewed_by": null,
+    "reviewed_at": null,
+    "conflicts_with": [],
+    "reasoning": null
+  },
+  {
+    "id": "17987770-7a6b-4b65-a812-5e990483abbc",
+    "image_id": "345bcf6e-f7bf-4965-b30c-7e5ffdc5d8c5",
+    "bounding_box": {
+      "x": 290.0,
+      "y": 48.0,
+      "width": 20.0,
+      "height": 22.0
+    },
+    "tag": "radio",
+    "confidence": null,
+    "annotator": "human_annotator",
+    "created_at": "2025-07-12T10:49:57.384032",
+    "updated_at": "2025-06-27T21:58:29.384034",
+    "status": "active",
+    "reviewed_by": null,
+    "reviewed_at": null,
+    "conflicts_with": [],
+    "reasoning": null
+  },
+  {
+    "id": "763d3e65-e94d-46df-8467-36b92206076c",
+    "image_id": "345bcf6e-f7bf-4965-b30c-7e5ffdc5d8c5",
+    "bounding_box": {
+      "x": 92.0,
+      "y": 368.0,
+      "width": 195.0,
+      "height": 28.0
+    },
+    "tag": "input",
+    "confidence": null,
+    "annotator": "human_annotator",
+    "created_at": "2025-07-20T07:30:57.384042",
+    "updated_at": "2025-07-20T04:11:07.384044",
+    "status": "active",
+    "reviewed_by": null,
+    "reviewed_at": null,
+    "conflicts_with": [],
+    "reasoning": null
+  },
+  {
+    "id": "ab745302-d1c5-43fc-af9f-dcc11682d1bf",
+    "image_id": "345bcf6e-f7bf-4965-b30c-7e5ffdc5d8c5",
+    "bounding_box": {
+      "x": 347.0,
+      "y": 620.0,
+      "width": 14.0,
+      "height": 15.0
+    },
+    "tag": "radio",
+    "confidence": null,
+    "annotator": "human_annotator",
+    "created_at": "2025-07-02T18:27:49.384051",
+    "updated_at": "2025-07-21T02:44:39.384053",
+    "status": "active",
+    "reviewed_by": null,
+    "reviewed_at": null,
+    "conflicts_with": [],
+    "reasoning": null
+  },
+  {
+    "id": "cab930ff-5376-47d0-8d93-01af6d17cafb",
+    "image_id": "345bcf6e-f7bf-4965-b30c-7e5ffdc5d8c5",
+    "bounding_box": {
+      "x": 124.0,
+      "y": 793.0,
+      "width": 235.0,
+      "height": 37.0
+    },
+    "tag": "input",
+    "confidence": null,
+    "annotator": "human_annotator",
+    "created_at": "2025-07-14T19:22:19.384060",
+    "updated_at": "2025-06-26T22:00:43.384063",
+    "status": "active",
+    "reviewed_by": null,
+    "reviewed_at": null,
+    "conflicts_with": [],
+    "reasoning": null
+  },
+  {
+    "id": "ab45d618-9c5a-48f8-b09d-869f702615d6",
+    "image_id": "345bcf6e-f7bf-4965-b30c-7e5ffdc5d8c5",
+    "bounding_box": {
+      "x": 222.0,
+      "y": 171.0,
+      "width": 177.0,
+      "height": 37.0
+    },
+    "tag": "dropdown",
+    "confidence": null,
+    "annotator": "human_annotator",
+    "created_at": "2025-07-09T11:44:48.384070",
+    "updated_at": "2025-07-13T14:06:45.384072",
+    "status": "active",
+    "reviewed_by": null,
+    "reviewed_at": null,
+    "conflicts_with": [],
+    "reasoning": null
+  },
+  {
+    "id": "35e23016-32cf-4953-82ae-52efe516b427",
+    "image_id": "345bcf6e-f7bf-4965-b30c-7e5ffdc5d8c5",
+    "bounding_box": {
+      "x": 160.0,
+      "y": 324.0,
+      "width": 124.0,
+      "height": 28.0
+    },
+    "tag": "dropdown",
+    "confidence": null,
+    "annotator": "human_annotator",
+    "created_at": "2025-07-07T06:06:56.384079",
+    "updated_at": "2025-07-06T02:17:19.384081",
+    "status": "active",
+    "reviewed_by": null,
+    "reviewed_at": null,
+    "conflicts_with": [],
+    "reasoning": null
+  },
+  {
+    "id": "644b6aeb-a4ca-4bcf-b596-fd6caa9efed9",
+    "image_id": "345bcf6e-f7bf-4965-b30c-7e5ffdc5d8c5",
+    "bounding_box": {
+      "x": 92.0,
+      "y": 765.0,
+      "width": 207.0,
+      "height": 35.0
+    },
+    "tag": "dropdown",
+    "confidence": null,
+    "annotator": "human_annotator",
+    "created_at": "2025-07-21T14:28:18.384088",
+    "updated_at": "2025-07-18T09:35:41.384090",
+    "status": "active",
+    "reviewed_by": null,
+    "reviewed_at": null,
+    "conflicts_with": [],
+    "reasoning": null
+  }
+]

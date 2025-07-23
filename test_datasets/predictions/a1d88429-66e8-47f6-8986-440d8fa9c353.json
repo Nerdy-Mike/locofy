@@ -1,0 +1,28 @@
+{
+  "image_id": "a1d88429-66e8-47f6-8986-440d8fa9c353",
+  "predictions": [
+    {
+      "id": "8f7848c5-626d-42e0-a976-9d6592b6a868",
+      "image_id": "a1d88429-66e8-47f6-8986-440d8fa9c353",
+      "bounding_box": {
+        "x": 80.63060511470574,
+        "y": 14.828748473368648,
+        "width": 274.3553023521782,
+        "height": 45.91251998546656
+      },
+      "tag": "input",
+      "confidence": 0.76,
+      "annotator": "gpt-4v",
+      "created_at": "2025-07-15T08:36:07.364004",
+      "updated_at": "2025-07-20T10:35:45.364006",
+      "status": "draft",
+      "reviewed_by": null,
+      "reviewed_at": null,
+      "conflicts_with": [],
+      "reasoning": null
+    }
+  ],
+  "llm_model": "gpt-4o",
+  "processing_time": 4.63,
+  "created_at": "2025-07-19T11:33:20.364104"
+}

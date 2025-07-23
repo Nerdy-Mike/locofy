@@ -1,0 +1,68 @@
+{
+  "image_id": "5a1a7554-bc02-4ff2-9e06-ad32ffc2798f",
+  "predictions": [
+    {
+      "id": "55dc5212-2a28-4518-81a3-8ec69ca2f498",
+      "image_id": "5a1a7554-bc02-4ff2-9e06-ad32ffc2798f",
+      "bounding_box": {
+        "x": 0,
+        "y": 44.888523888660984,
+        "width": 106.42882143104703,
+        "height": 32.51991765948659
+      },
+      "tag": "button",
+      "confidence": 0.71,
+      "annotator": "gpt-4v",
+      "created_at": "2025-07-11T20:18:36.377968",
+      "updated_at": "2025-07-14T09:13:27.377971",
+      "status": "draft",
+      "reviewed_by": null,
+      "reviewed_at": null,
+      "conflicts_with": [],
+      "reasoning": null
+    },
+    {
+      "id": "50f0a9b0-40f9-4b79-ac02-0b93fae5491b",
+      "image_id": "5a1a7554-bc02-4ff2-9e06-ad32ffc2798f",
+      "bounding_box": {
+        "x": 788.7851317948545,
+        "y": 354.32703238857476,
+        "width": 263.6533757581157,
+        "height": 38.974846851199715
+      },
+      "tag": "dropdown",
+      "confidence": 0.72,
+      "annotator": "gpt-4v",
+      "created_at": "2025-07-19T14:49:29.377977",
+      "updated_at": "2025-07-11T07:58:20.377979",
+      "status": "draft",
+      "reviewed_by": null,
+      "reviewed_at": null,
+      "conflicts_with": [],
+      "reasoning": null
+    },
+    {
+      "id": "0e43bf35-76dd-4616-b584-ff4d64b56e63",
+      "image_id": "5a1a7554-bc02-4ff2-9e06-ad32ffc2798f",
+      "bounding_box": {
+        "x": 463.4761077576287,
+        "y": 164.4818249898797,
+        "width": 152.53595225607987,
+        "height": 32.88200168394536
+      },
+      "tag": "button",
+      "confidence": 0.82,
+      "annotator": "gpt-4v",
+      "created_at": "2025-07-15T00:26:55.377985",
+      "updated_at": "2025-06-26T16:32:18.377988",
+      "status": "draft",
+      "reviewed_by": null,
+      "reviewed_at": null,
+      "conflicts_with": [],
+      "reasoning": null
+    }
+  ],
+  "llm_model": "gpt-4o",
+  "processing_time": 4.46,
+  "created_at": "2025-07-20T00:14:54.378109"
+}

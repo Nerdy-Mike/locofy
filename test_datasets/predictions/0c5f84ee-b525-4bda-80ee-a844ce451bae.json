@@ -1,0 +1,148 @@
+{
+  "image_id": "0c5f84ee-b525-4bda-80ee-a844ce451bae",
+  "predictions": [
+    {
+      "id": "425e3d11-b970-4c8f-9a5a-66da41d131ab",
+      "image_id": "0c5f84ee-b525-4bda-80ee-a844ce451bae",
+      "bounding_box": {
+        "x": 270.9043969920692,
+        "y": 610.5218376653954,
+        "width": 20.381265357687486,
+        "height": 28.53377150076248
+      },
+      "tag": "radio",
+      "confidence": 0.93,
+      "annotator": "gpt-4v",
+      "created_at": "2025-07-05T16:03:18.720660",
+      "updated_at": "2025-07-04T19:50:25.720662",
+      "status": "draft",
+      "reviewed_by": null,
+      "reviewed_at": null,
+      "conflicts_with": [],
+      "reasoning": null
+    },
+    {
+      "id": "5d7bbabe-04fe-4f5e-af83-c341d76d14e5",
+      "image_id": "0c5f84ee-b525-4bda-80ee-a844ce451bae",
+      "bounding_box": {
+        "x": 30.41233391792696,
+        "y": 378.7099627564314,
+        "width": 25.114009112104583,
+        "height": 17.38662169299548
+      },
+      "tag": "radio",
+      "confidence": 0.85,
+      "annotator": "gpt-4v",
+      "created_at": "2025-07-05T17:17:50.720668",
+      "updated_at": "2025-07-17T17:56:19.720670",
+      "status": "draft",
+      "reviewed_by": null,
+      "reviewed_at": null,
+      "conflicts_with": [],
+      "reasoning": null
+    },
+    {
+      "id": "7dfc7772-7dfe-4590-b3bf-51c40a21dacd",
+      "image_id": "0c5f84ee-b525-4bda-80ee-a844ce451bae",
+      "bounding_box": {
+        "x": 62.70065787985382,
+        "y": 472.54539551107837,
+        "width": 17.695247321213564,
+        "height": 23.225012109092802
+      },
+      "tag": "radio",
+      "confidence": 0.82,
+      "annotator": "gpt-4v",
+      "created_at": "2025-07-07T13:48:32.720675",
+      "updated_at": "2025-07-20T21:35:40.720677",
+      "status": "draft",
+      "reviewed_by": null,
+      "reviewed_at": null,
+      "conflicts_with": [],
+      "reasoning": null
+    },
+    {
+      "id": "7cb578f2-76ba-4412-b0d1-f03fc3ce328a",
+      "image_id": "0c5f84ee-b525-4bda-80ee-a844ce451bae",
+      "bounding_box": {
+        "x": 192.5744961437483,
+        "y": 599.5727560100869,
+        "width": 130.13203551848588,
+        "height": 28.814950721950442
+      },
+      "tag": "button",
+      "confidence": 0.9,
+      "annotator": "gpt-4v",
+      "created_at": "2025-07-20T13:37:39.720683",
+      "updated_at": "2025-07-18T23:59:07.720685",
+      "status": "draft",
+      "reviewed_by": null,
+      "reviewed_at": null,
+      "conflicts_with": [],
+      "reasoning": null
+    },
+    {
+      "id": "6a0654cc-5de2-4631-9c1b-373f683884f7",
+      "image_id": "0c5f84ee-b525-4bda-80ee-a844ce451bae",
+      "bounding_box": {
+        "x": 142.2261280942422,
+        "y": 701.0492408041864,
+        "width": 240.54161223653847,
+        "height": 38.864801977082635
+      },
+      "tag": "input",
+      "confidence": 0.91,
+      "annotator": "gpt-4v",
+      "created_at": "2025-06-29T21:44:15.720691",
+      "updated_at": "2025-07-11T10:40:17.720693",
+      "status": "draft",
+      "reviewed_by": null,
+      "reviewed_at": null,
+      "conflicts_with": [],
+      "reasoning": null
+    },
+    {
+      "id": "b9027fd5-d414-4492-b796-f403277a1f02",
+      "image_id": "0c5f84ee-b525-4bda-80ee-a844ce451bae",
+      "bounding_box": {
+        "x": 88.2537323712037,
+        "y": 463.61112213710805,
+        "width": 213.48243470201177,
+        "height": 34.432650758388995
+      },
+      "tag": "input",
+      "confidence": 0.86,
+      "annotator": "gpt-4v",
+      "created_at": "2025-06-27T20:49:23.720699",
+      "updated_at": "2025-06-30T05:24:21.720701",
+      "status": "draft",
+      "reviewed_by": null,
+      "reviewed_at": null,
+      "conflicts_with": [],
+      "reasoning": null
+    },
+    {
+      "id": "587ba40f-b0fc-4280-b45b-f38550ff7d83",
+      "image_id": "0c5f84ee-b525-4bda-80ee-a844ce451bae",
+      "bounding_box": {
+        "x": 12.0,
+        "y": 312.0,
+        "width": 171.0,
+        "height": 51.0
+      },
+      "tag": "button",
+      "confidence": 0.82,
+      "annotator": "gpt-4v",
+      "created_at": "2025-07-03T13:49:47.720725",
+      "updated_at": "2025-07-01T23:57:34.720726",
+      "status": "draft",
+      "reviewed_by": null,
+      "reviewed_at": null,
+      "conflicts_with": [],
+      "reasoning": null
+    }
+  ],
+  "llm_model": "gpt-4o",
+  "processing_time": 6.91,
+  "created_at": "2025-07-16T20:08:42.720844"
+}

@@ -1,0 +1,48 @@
+{
+  "image_id": "test_image_066",
+  "predictions": [
+    {
+      "id": "fa009748-f68d-4d92-9bf5-7f56d812a146",
+      "image_id": "test_image_066",
+      "bounding_box": {
+        "x": 231.0,
+        "y": 421.0,
+        "width": 267.0,
+        "height": 269.0
+      },
+      "tag": "dropdown",
+      "confidence": 0.32,
+      "annotator": "gpt-4v",
+      "created_at": "2024-01-01T10:05:00.000Z",
+      "updated_at": "2024-01-01T10:05:00.000Z",
+      "status": "draft",
+      "reviewed_by": null,
+      "reviewed_at": null,
+      "conflicts_with": [],
+      "reasoning": null
+    },
+    {
+      "id": "e880a872-3035-459c-a9d4-fb4cff6e0850",
+      "image_id": "test_image_066",
+      "bounding_box": {
+        "x": 25.0,
+        "y": 721.0,
+        "width": 153.0,
+        "height": 180.0
+      },
+      "tag": "input",
+      "confidence": 0.69,
+      "annotator": "gpt-4v",
+      "created_at": "2024-01-01T10:05:00.000Z",
+      "updated_at": "2024-01-01T10:05:00.000Z",
+      "status": "draft",
+      "reviewed_by": null,
+      "reviewed_at": null,
+      "conflicts_with": [],
+      "reasoning": null
+    }
+  ],
+  "llm_model": "gpt-4o-test",
+  "processing_time": 6.019,
+  "created_at": "2024-01-01T10:05:00.000Z"
+}

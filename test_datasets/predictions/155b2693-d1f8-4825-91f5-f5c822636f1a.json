@@ -1,0 +1,88 @@
+{
+  "image_id": "155b2693-d1f8-4825-91f5-f5c822636f1a",
+  "predictions": [
+    {
+      "id": "f726736e-fd1d-4e63-ac11-6d6918ac2e84",
+      "image_id": "155b2693-d1f8-4825-91f5-f5c822636f1a",
+      "bounding_box": {
+        "x": 435.50346874824106,
+        "y": 856.9403461940109,
+        "width": 203.82213006064322,
+        "height": 52.630127480447776
+      },
+      "tag": "button",
+      "confidence": 0.72,
+      "annotator": "gpt-4v",
+      "created_at": "2025-06-28T03:44:39.381437",
+      "updated_at": "2025-07-03T02:10:42.381440",
+      "status": "draft",
+      "reviewed_by": null,
+      "reviewed_at": null,
+      "conflicts_with": [],
+      "reasoning": null
+    },
+    {
+      "id": "b4e23c9f-8eeb-4a88-b785-ac42693ac3e5",
+      "image_id": "155b2693-d1f8-4825-91f5-f5c822636f1a",
+      "bounding_box": {
+        "x": 460.9849435793485,
+        "y": 737.2338411146601,
+        "width": 169.52820917250108,
+        "height": 25.842714812881262
+      },
+      "tag": "dropdown",
+      "confidence": 0.88,
+      "annotator": "gpt-4v",
+      "created_at": "2025-07-09T05:08:14.381446",
+      "updated_at": "2025-06-24T22:48:05.381448",
+      "status": "draft",
+      "reviewed_by": null,
+      "reviewed_at": null,
+      "conflicts_with": [],
+      "reasoning": null
+    },
+    {
+      "id": "9a3e0bf3-03d4-4d83-91cc-d13ddb63f299",
+      "image_id": "155b2693-d1f8-4825-91f5-f5c822636f1a",
+      "bounding_box": {
+        "x": 514.0,
+        "y": 108.0,
+        "width": 86.0,
+        "height": 24.0
+      },
+      "tag": "button",
+      "confidence": 0.67,
+      "annotator": "gpt-4v",
+      "created_at": "2025-07-07T17:45:35.381463",
+      "updated_at": "2025-07-22T13:21:40.381465",
+      "status": "draft",
+      "reviewed_by": null,
+      "reviewed_at": null,
+      "conflicts_with": [],
+      "reasoning": null
+    },
+    {
+      "id": "948f0211-5b4c-4705-ac2b-0561a788ce84",
+      "image_id": "155b2693-d1f8-4825-91f5-f5c822636f1a",
+      "bounding_box": {
+        "x": 404.0,
+        "y": 841.0,
+        "width": 132.0,
+        "height": 39.0
+      },
+      "tag": "button",
+      "confidence": 0.77,
+      "annotator": "gpt-4v",
+      "created_at": "2025-07-16T02:53:47.381470",
+      "updated_at": "2025-06-30T16:47:27.381472",
+      "status": "draft",
+      "reviewed_by": null,
+      "reviewed_at": null,
+      "conflicts_with": [],
+      "reasoning": null
+    }
+  ],
+  "llm_model": "gpt-4o",
+  "processing_time": 5.2,
+  "created_at": "2025-06-29T17:33:24.381584"
+}

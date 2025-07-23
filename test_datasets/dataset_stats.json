@@ -1,0 +1,16 @@
+{
+  "total_annotations": 490,
+  "total_predictions": 504,
+  "annotations_by_tag": {
+    "button": 139,
+    "input": 129,
+    "radio": 105,
+    "dropdown": 117
+  },
+  "predictions_by_tag": {
+    "button": 124,
+    "input": 136,
+    "radio": 116,
+    "dropdown": 128
+  }
+}

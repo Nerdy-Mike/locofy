@@ -1,0 +1,68 @@
+{
+  "image_id": "e22bba9d-ff48-4864-8edc-9f95ad99f4e8",
+  "predictions": [
+    {
+      "id": "49bceeb3-c44f-4a17-8be4-950475a430b0",
+      "image_id": "e22bba9d-ff48-4864-8edc-9f95ad99f4e8",
+      "bounding_box": {
+        "x": 0,
+        "y": 44.888523888660984,
+        "width": 106.42882143104703,
+        "height": 32.51991765948659
+      },
+      "tag": "button",
+      "confidence": 0.71,
+      "annotator": "gpt-4v",
+      "created_at": "2025-07-11T20:18:30.702340",
+      "updated_at": "2025-07-14T09:13:21.702342",
+      "status": "draft",
+      "reviewed_by": null,
+      "reviewed_at": null,
+      "conflicts_with": [],
+      "reasoning": null
+    },
+    {
+      "id": "4a360487-16c2-402f-9ff0-acec8d5cb992",
+      "image_id": "e22bba9d-ff48-4864-8edc-9f95ad99f4e8",
+      "bounding_box": {
+        "x": 788.7851317948545,
+        "y": 354.32703238857476,
+        "width": 263.6533757581157,
+        "height": 38.974846851199715
+      },
+      "tag": "dropdown",
+      "confidence": 0.72,
+      "annotator": "gpt-4v",
+      "created_at": "2025-07-19T14:49:23.702349",
+      "updated_at": "2025-07-11T07:58:14.702351",
+      "status": "draft",
+      "reviewed_by": null,
+      "reviewed_at": null,
+      "conflicts_with": [],
+      "reasoning": null
+    },
+    {
+      "id": "e4245ff6-a016-45f1-94e5-471a925d9fdb",
+      "image_id": "e22bba9d-ff48-4864-8edc-9f95ad99f4e8",
+      "bounding_box": {
+        "x": 463.4761077576287,
+        "y": 164.4818249898797,
+        "width": 152.53595225607987,
+        "height": 32.88200168394536
+      },
+      "tag": "button",
+      "confidence": 0.82,
+      "annotator": "gpt-4v",
+      "created_at": "2025-07-15T00:26:49.702357",
+      "updated_at": "2025-06-26T16:32:12.702359",
+      "status": "draft",
+      "reviewed_by": null,
+      "reviewed_at": null,
+      "conflicts_with": [],
+      "reasoning": null
+    }
+  ],
+  "llm_model": "gpt-4o",
+  "processing_time": 4.46,
+  "created_at": "2025-07-20T00:14:48.702504"
+}
